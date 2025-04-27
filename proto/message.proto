@@ -1,0 +1,11 @@
+syntax = "proto3";
+package chatter_message;
+option go_package = "github.com/dulguunb/chatter-go";
+
+message Message {
+    string username = 1;
+    string message = 2;
+}
+service Chat {
+    rpc SendMessage (Message) returns (Message);
+}
