@@ -3,9 +3,11 @@ package tui
 import (
 	"fmt"
 	"log"
+	"strings"
 
-	"github.com/dulguunb/chatter-go/client/client_grpc"
+	"github.com/dulguunb/chatter-go/client/client_grpc/list_client"
 	chatterPb "github.com/dulguunb/go-chatter/gen"
+	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
 )
 
@@ -21,7 +23,7 @@ type TUI struct {
 	pages         *tview.Pages
 	UserInfo      UserInfo
 	userList      *tview.List
-	clientService client_grpc.ClientService
+	clientService list_client.ListUsersService
 }
 
 var _ UserInterface = (*TUI)(nil)
@@ -60,7 +62,7 @@ func (t *TUI) createFormPage() *tview.Form {
 }
 
 func (t *TUI) listUsers() {
-	clientService := client_grpc.New(t.UserInfo.Username, t.UserInfo.ServerIp)
+	clientService := list_client.New(t.UserInfo.Username, t.UserInfo.ServerIp)
 	valid, err := clientService.ValidateTheConnection()
 	if err != nil && valid {
 		t.app.Stop()
@@ -89,11 +91,55 @@ func (t *TUI) listUsers() {
 func (t *TUI) Redraw(users map[string]*chatterPb.UserInfo) {
 	t.app.QueueUpdateDraw(func() {
 		for username, _ := range users {
-			title := fmt.Sprintf("User: %s", username)
-			t.userList.AddItem(title, "Press enter to chat", rune(0), func() {
+			t.userList.AddItem(username, "Press enter to chat", rune(0), func() {
+				t.clientService.Partner = username
 			})
 		}
 	})
+}
+
+func (t *TUI) CreateMessengerPage() {
+	messageView := tview.NewTextView().
+		SetDynamicColors(true).
+		SetScrollable(true)
+	messageView.SetBorder(true).SetTitle("Messages")
+	inputField := tview.NewInputField().
+		SetLabel("Enter message: ").
+		SetFieldWidth(0) // Make the input field take up available width
+	inputField.SetBorder(true)
+	flex := tview.NewFlex().
+		SetDirection(tview.FlexRow).
+		AddItem(messageView, 0, 1, false). // Message view takes priority in height
+		AddItem(inputField, 3, 1, true)    // Input field has a fixed height of 3 rows
+	inputField.SetDoneFunc(func(key tcell.Key) {
+		if key == tcell.KeyEnter {
+			message := inputField.GetText()
+			if strings.TrimSpace(message) != "" {
+				// Append the message to the message view
+				fmt.Fprintf(messageView, "%s\n", message)
+				// Clear the input field
+				inputField.SetText("")
+				// Scroll to the bottom of the message view
+				messageView.ScrollToEnd()
+			}
+		}
+	})
+	inputField.SetDoneFunc(func(key tcell.Key) {
+		if key == tcell.KeyEnter {
+			message := inputField.GetText()
+			if strings.TrimSpace(message) != "" {
+				// Append the message to the message view
+				fmt.Fprintf(messageView, "%s\n", message)
+				// Clear the input field
+				inputField.SetText("")
+				// Scroll to the bottom of the message view
+				messageView.ScrollToEnd()
+			}
+		}
+	})
+	if err := t.app.SetRoot(flex, true).SetFocus(inputField).Run(); err != nil {
+		panic(err)
+	}
 }
 
 func (t *TUI) CreateLandingPage() {

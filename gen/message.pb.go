@@ -23,7 +23,7 @@ const (
 
 type Message struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Username      string                 `protobuf:"bytes,1,opt,name=username,proto3" json:"username,omitempty"`
+	Time          int64                  `protobuf:"varint,1,opt,name=time,proto3" json:"time,omitempty"`
 	Message       string                 `protobuf:"bytes,2,opt,name=message,proto3" json:"message,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -59,11 +59,11 @@ func (*Message) Descriptor() ([]byte, []int) {
 	return file_message_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *Message) GetUsername() string {
+func (x *Message) GetTime() int64 {
 	if x != nil {
-		return x.Username
+		return x.Time
 	}
-	return ""
+	return 0
 }
 
 func (x *Message) GetMessage() string {
@@ -73,16 +73,127 @@ func (x *Message) GetMessage() string {
 	return ""
 }
 
+type Envelope struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Addr          *Address               `protobuf:"bytes,1,opt,name=addr,proto3" json:"addr,omitempty"`
+	Msg           *Message               `protobuf:"bytes,2,opt,name=msg,proto3" json:"msg,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *Envelope) Reset() {
+	*x = Envelope{}
+	mi := &file_message_proto_msgTypes[1]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Envelope) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Envelope) ProtoMessage() {}
+
+func (x *Envelope) ProtoReflect() protoreflect.Message {
+	mi := &file_message_proto_msgTypes[1]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Envelope.ProtoReflect.Descriptor instead.
+func (*Envelope) Descriptor() ([]byte, []int) {
+	return file_message_proto_rawDescGZIP(), []int{1}
+}
+
+func (x *Envelope) GetAddr() *Address {
+	if x != nil {
+		return x.Addr
+	}
+	return nil
+}
+
+func (x *Envelope) GetMsg() *Message {
+	if x != nil {
+		return x.Msg
+	}
+	return nil
+}
+
+type Address struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Sender        string                 `protobuf:"bytes,1,opt,name=sender,proto3" json:"sender,omitempty"`
+	Receiver      string                 `protobuf:"bytes,2,opt,name=receiver,proto3" json:"receiver,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *Address) Reset() {
+	*x = Address{}
+	mi := &file_message_proto_msgTypes[2]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Address) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Address) ProtoMessage() {}
+
+func (x *Address) ProtoReflect() protoreflect.Message {
+	mi := &file_message_proto_msgTypes[2]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Address.ProtoReflect.Descriptor instead.
+func (*Address) Descriptor() ([]byte, []int) {
+	return file_message_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *Address) GetSender() string {
+	if x != nil {
+		return x.Sender
+	}
+	return ""
+}
+
+func (x *Address) GetReceiver() string {
+	if x != nil {
+		return x.Receiver
+	}
+	return ""
+}
+
 var File_message_proto protoreflect.FileDescriptor
 
 const file_message_proto_rawDesc = "" +
 	"\n" +
-	"\rmessage.proto\x12\x0fchatter_message\"?\n" +
-	"\aMessage\x12\x1a\n" +
-	"\busername\x18\x01 \x01(\tR\busername\x12\x18\n" +
-	"\amessage\x18\x02 \x01(\tR\amessage2I\n" +
-	"\x04Chat\x12A\n" +
-	"\vSendMessage\x12\x18.chatter_message.Message\x1a\x18.chatter_message.MessageB Z\x1egithub.com/dulguunb/chatter-gob\x06proto3"
+	"\rmessage.proto\x12\x0fchatter_message\"7\n" +
+	"\aMessage\x12\x12\n" +
+	"\x04time\x18\x01 \x01(\x03R\x04time\x12\x18\n" +
+	"\amessage\x18\x02 \x01(\tR\amessage\"d\n" +
+	"\bEnvelope\x12,\n" +
+	"\x04addr\x18\x01 \x01(\v2\x18.chatter_message.AddressR\x04addr\x12*\n" +
+	"\x03msg\x18\x02 \x01(\v2\x18.chatter_message.MessageR\x03msg\"=\n" +
+	"\aAddress\x12\x16\n" +
+	"\x06sender\x18\x01 \x01(\tR\x06sender\x12\x1a\n" +
+	"\breceiver\x18\x02 \x01(\tR\breceiver2\x94\x01\n" +
+	"\x04Chat\x12D\n" +
+	"\fSendEnvelope\x12\x19.chatter_message.Envelope\x1a\x19.chatter_message.Envelope\x12F\n" +
+	"\x0fReceiveEnvelope\x12\x18.chatter_message.Address\x1a\x19.chatter_message.EnvelopeB Z\x1egithub.com/dulguunb/chatter-gob\x06proto3"
 
 var (
 	file_message_proto_rawDescOnce sync.Once
@@ -96,18 +207,24 @@ func file_message_proto_rawDescGZIP() []byte {
 	return file_message_proto_rawDescData
 }
 
-var file_message_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
+var file_message_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
 var file_message_proto_goTypes = []any{
-	(*Message)(nil), // 0: chatter_message.Message
+	(*Message)(nil),  // 0: chatter_message.Message
+	(*Envelope)(nil), // 1: chatter_message.Envelope
+	(*Address)(nil),  // 2: chatter_message.Address
 }
 var file_message_proto_depIdxs = []int32{
-	0, // 0: chatter_message.Chat.SendMessage:input_type -> chatter_message.Message
-	0, // 1: chatter_message.Chat.SendMessage:output_type -> chatter_message.Message
-	1, // [1:2] is the sub-list for method output_type
-	0, // [0:1] is the sub-list for method input_type
-	0, // [0:0] is the sub-list for extension type_name
-	0, // [0:0] is the sub-list for extension extendee
-	0, // [0:0] is the sub-list for field type_name
+	2, // 0: chatter_message.Envelope.addr:type_name -> chatter_message.Address
+	0, // 1: chatter_message.Envelope.msg:type_name -> chatter_message.Message
+	1, // 2: chatter_message.Chat.SendEnvelope:input_type -> chatter_message.Envelope
+	2, // 3: chatter_message.Chat.ReceiveEnvelope:input_type -> chatter_message.Address
+	1, // 4: chatter_message.Chat.SendEnvelope:output_type -> chatter_message.Envelope
+	1, // 5: chatter_message.Chat.ReceiveEnvelope:output_type -> chatter_message.Envelope
+	4, // [4:6] is the sub-list for method output_type
+	2, // [2:4] is the sub-list for method input_type
+	2, // [2:2] is the sub-list for extension type_name
+	2, // [2:2] is the sub-list for extension extendee
+	0, // [0:2] is the sub-list for field type_name
 }
 
 func init() { file_message_proto_init() }
@@ -121,7 +238,7 @@ func file_message_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_message_proto_rawDesc), len(file_message_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   1,
+			NumMessages:   3,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

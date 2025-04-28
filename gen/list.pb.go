@@ -26,7 +26,7 @@ type UserInfo struct {
 	IsAvailable   bool                   `protobuf:"varint,1,opt,name=isAvailable,proto3" json:"isAvailable,omitempty"`
 	ClientTime    int64                  `protobuf:"varint,3,opt,name=clientTime,proto3" json:"clientTime,omitempty"`
 	ServerTime    int64                  `protobuf:"varint,4,opt,name=serverTime,proto3" json:"serverTime,omitempty"`
-	InChat        bool                   `protobuf:"varint,5,opt,name=inChat,proto3" json:"inChat,omitempty"`
+	Partner       string                 `protobuf:"bytes,5,opt,name=partner,proto3" json:"partner,omitempty"` //TODO: use invite mechanism to fill the partner
 	Terminate     bool                   `protobuf:"varint,6,opt,name=terminate,proto3" json:"terminate,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -83,11 +83,11 @@ func (x *UserInfo) GetServerTime() int64 {
 	return 0
 }
 
-func (x *UserInfo) GetInChat() bool {
+func (x *UserInfo) GetPartner() string {
 	if x != nil {
-		return x.InChat
+		return x.Partner
 	}
-	return false
+	return ""
 }
 
 func (x *UserInfo) GetTerminate() bool {
@@ -206,7 +206,7 @@ var File_list_proto protoreflect.FileDescriptor
 const file_list_proto_rawDesc = "" +
 	"\n" +
 	"\n" +
-	"list.proto\x12\fchatter_list\"\xa2\x01\n" +
+	"list.proto\x12\fchatter_list\"\xa4\x01\n" +
 	"\bUserInfo\x12 \n" +
 	"\visAvailable\x18\x01 \x01(\bR\visAvailable\x12\x1e\n" +
 	"\n" +
@@ -214,8 +214,8 @@ const file_list_proto_rawDesc = "" +
 	"clientTime\x12\x1e\n" +
 	"\n" +
 	"serverTime\x18\x04 \x01(\x03R\n" +
-	"serverTime\x12\x16\n" +
-	"\x06inChat\x18\x05 \x01(\bR\x06inChat\x12\x1c\n" +
+	"serverTime\x12\x18\n" +
+	"\apartner\x18\x05 \x01(\tR\apartner\x12\x1c\n" +
 	"\tterminate\x18\x06 \x01(\bR\tterminate\"\xa7\x01\n" +
 	"\x11ListUsersResponse\x12@\n" +
 	"\x05users\x18\x01 \x03(\v2*.chatter_list.ListUsersResponse.UsersEntryR\x05users\x1aP\n" +

@@ -1,0 +1,19 @@
+syntax = "proto3";
+package chatter_invite;
+option go_package = "github.com/dulguunb/chatter-go";
+
+message InviteRequest {
+    string Requestee = 1;
+    string Requester = 2;
+}
+enum InviteState {
+    ACCEPTED = 0;
+    DENIED = 1;
+}
+message InviteResponse{
+    InviteState response = 1;
+}
+
+service InviteUserService {
+    rpc SendInvite (InviteRequest) returns (InviteResponse);
+}

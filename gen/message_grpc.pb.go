@@ -19,14 +19,18 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	Chat_SendMessage_FullMethodName = "/chatter_message.Chat/SendMessage"
+	Chat_SendEnvelope_FullMethodName    = "/chatter_message.Chat/SendEnvelope"
+	Chat_ReceiveEnvelope_FullMethodName = "/chatter_message.Chat/ReceiveEnvelope"
 )
 
 // ChatClient is the client API for Chat service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
+//
+//	flip the receiver and sender in the server implementation
 type ChatClient interface {
-	SendMessage(ctx context.Context, in *Message, opts ...grpc.CallOption) (*Message, error)
+	SendEnvelope(ctx context.Context, in *Envelope, opts ...grpc.CallOption) (*Envelope, error)
+	ReceiveEnvelope(ctx context.Context, in *Address, opts ...grpc.CallOption) (*Envelope, error)
 }
 
 type chatClient struct {
@@ -37,10 +41,20 @@ func NewChatClient(cc grpc.ClientConnInterface) ChatClient {
 	return &chatClient{cc}
 }
 
-func (c *chatClient) SendMessage(ctx context.Context, in *Message, opts ...grpc.CallOption) (*Message, error) {
+func (c *chatClient) SendEnvelope(ctx context.Context, in *Envelope, opts ...grpc.CallOption) (*Envelope, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(Message)
-	err := c.cc.Invoke(ctx, Chat_SendMessage_FullMethodName, in, out, cOpts...)
+	out := new(Envelope)
+	err := c.cc.Invoke(ctx, Chat_SendEnvelope_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *chatClient) ReceiveEnvelope(ctx context.Context, in *Address, opts ...grpc.CallOption) (*Envelope, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Envelope)
+	err := c.cc.Invoke(ctx, Chat_ReceiveEnvelope_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -50,8 +64,11 @@ func (c *chatClient) SendMessage(ctx context.Context, in *Message, opts ...grpc.
 // ChatServer is the server API for Chat service.
 // All implementations must embed UnimplementedChatServer
 // for forward compatibility.
+//
+//	flip the receiver and sender in the server implementation
 type ChatServer interface {
-	SendMessage(context.Context, *Message) (*Message, error)
+	SendEnvelope(context.Context, *Envelope) (*Envelope, error)
+	ReceiveEnvelope(context.Context, *Address) (*Envelope, error)
 	mustEmbedUnimplementedChatServer()
 }
 
@@ -62,8 +79,11 @@ type ChatServer interface {
 // pointer dereference when methods are called.
 type UnimplementedChatServer struct{}
 
-func (UnimplementedChatServer) SendMessage(context.Context, *Message) (*Message, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method SendMessage not implemented")
+func (UnimplementedChatServer) SendEnvelope(context.Context, *Envelope) (*Envelope, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SendEnvelope not implemented")
+}
+func (UnimplementedChatServer) ReceiveEnvelope(context.Context, *Address) (*Envelope, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ReceiveEnvelope not implemented")
 }
 func (UnimplementedChatServer) mustEmbedUnimplementedChatServer() {}
 func (UnimplementedChatServer) testEmbeddedByValue()              {}
@@ -86,20 +106,38 @@ func RegisterChatServer(s grpc.ServiceRegistrar, srv ChatServer) {
 	s.RegisterService(&Chat_ServiceDesc, srv)
 }
 
-func _Chat_SendMessage_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(Message)
+func _Chat_SendEnvelope_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Envelope)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(ChatServer).SendMessage(ctx, in)
+		return srv.(ChatServer).SendEnvelope(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: Chat_SendMessage_FullMethodName,
+		FullMethod: Chat_SendEnvelope_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ChatServer).SendMessage(ctx, req.(*Message))
+		return srv.(ChatServer).SendEnvelope(ctx, req.(*Envelope))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Chat_ReceiveEnvelope_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Address)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ChatServer).ReceiveEnvelope(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Chat_ReceiveEnvelope_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ChatServer).ReceiveEnvelope(ctx, req.(*Address))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -112,8 +150,12 @@ var Chat_ServiceDesc = grpc.ServiceDesc{
 	HandlerType: (*ChatServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "SendMessage",
-			Handler:    _Chat_SendMessage_Handler,
+			MethodName: "SendEnvelope",
+			Handler:    _Chat_SendEnvelope_Handler,
+		},
+		{
+			MethodName: "ReceiveEnvelope",
+			Handler:    _Chat_ReceiveEnvelope_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
