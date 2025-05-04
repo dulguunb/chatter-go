@@ -15,7 +15,6 @@ var (
 )
 
 func main() {
-	// ctx := context.Background()
 	chatServer := api.NewChatServer()
 	lis, err := net.Listen("tcp", fmt.Sprintf("0.0.0.0:%d", port))
 	if err != nil {
