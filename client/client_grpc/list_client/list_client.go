@@ -2,11 +2,12 @@ package list_client
 
 import (
 	"context"
-	"fmt"
+	"log"
 	"sync"
 	"time"
 
 	chatterPb "github.com/dulguunb/go-chatter/gen"
+	"github.com/google/uuid"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
@@ -15,73 +16,80 @@ import (
 const TIMEOUT = 10
 
 type Chatter interface {
-	ValidateTheConnection() (bool, error)
 }
 
 type ListUsersService struct {
-	clientTime   int64
-	mu           sync.Mutex
-	username     string
-	serverIp     string
-	port         int
-	creds        credentials.TransportCredentials
-	conn         *grpc.ClientConn
-	ListUserChan chan *chatterPb.ListUsersResponse
-	Users        map[string]*chatterPb.UserInfo
-	Partner      string
+	clientTime int64
+	mu         sync.Mutex
+	Me         *chatterPb.User
+	creds      credentials.TransportCredentials
+	Conn       *grpc.ClientConn
+	UsersChan  chan map[string]*chatterPb.User
+	Users      map[string]*chatterPb.User
+	Error      chan error
 }
 
 var _ Chatter = (*ListUsersService)(nil)
 
-func New(username string, serverIp string) *ListUsersService {
-	return &ListUsersService{
-		username:     username,
-		serverIp:     serverIp,
-		port:         50051,
-		creds:        insecure.NewCredentials(),
-		conn:         nil,
-		ListUserChan: make(chan *chatterPb.ListUsersResponse),
+func New(username string, conn *grpc.ClientConn) *ListUsersService {
+
+	listUsersService := &ListUsersService{
+		Me: &chatterPb.User{
+			Username: username,
+			Id:       uuid.New().String(),
+		},
+		Conn:      conn,
+		creds:     insecure.NewCredentials(),
+		Error:     make(chan error),
+		UsersChan: make(chan map[string]*chatterPb.User),
+		Users:     map[string]*chatterPb.User{},
 	}
-}
-func (c *ListUsersService) ValidateTheConnection() (bool, error) {
-	address := fmt.Sprintf("%s:%d", c.serverIp, c.port)
-	conn, err := grpc.NewClient(address, grpc.WithTransportCredentials(c.creds))
-	c.conn = conn
+	_, err := listUsersService.addMe()
 	if err != nil {
-		return false, nil
+		log.Fatal(err)
 	}
-	return true, nil
+	return listUsersService
 }
 
-func (c *ListUsersService) listUsersRequest() (*chatterPb.ListUsersResponse, error) {
-	client := chatterPb.NewListUsersRequestServiceClient(c.conn)
+func (c *ListUsersService) addMe() (*chatterPb.AddUserResponse, error) {
+	client := chatterPb.NewChatServiceClient(c.Conn)
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*TIMEOUT)
 	defer cancel()
-	c.mu.Lock()
-	c.clientTime += 1
-	c.mu.Unlock()
-	r, err := client.SendRequest(ctx, &chatterPb.ListUsersRequest{Username: c.username, ClientTime: c.clientTime})
+	r, err := client.AddUser(ctx, &chatterPb.AddUserRequest{User: c.Me})
 	if err != nil {
 		return nil, err
 	}
 	return r, nil
 }
 
-func (c *ListUsersService) ListUsersRequest() {
-	ticker := time.NewTicker(5 * time.Second)
-	response, err := c.listUsersRequest()
+func (c *ListUsersService) getAvailableUsersInternal() (*chatterPb.GetAvailableUsersResponse, error) {
+	client := chatterPb.NewChatServiceClient(c.Conn)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*TIMEOUT)
+	defer cancel()
+	r, err := client.GetAvailableUsers(ctx, &chatterPb.GetAvailableUsersRequest{User: c.Me})
 	if err != nil {
-		return
+		return nil, err
 	}
-	c.ListUserChan <- response
-	for {
-		select {
-		case <-ticker.C:
-			resp, err := c.listUsersRequest()
-			if err != nil {
-				return
+	return r, nil
+}
+
+func (c *ListUsersService) GatherAvailableUsers() {
+	ticker := time.NewTicker(2 * time.Second)
+	go func() {
+		for {
+			select {
+			case <-ticker.C:
+				resp, err := c.getAvailableUsersInternal()
+				if err != nil {
+					c.Error <- err
+				}
+				for _, user := range resp.Users {
+					c.mu.Lock()
+					c.Users[user.Id] = user
+					c.mu.Unlock()
+				}
+				c.UsersChan <- c.Users
 			}
-			c.ListUserChan <- resp
 		}
-	}
+	}()
 }

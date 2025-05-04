@@ -1,23 +1,24 @@
 package main
 
-import "github.com/dulguunb/chatter-go/client/tui"
+import (
+	"fmt"
+
+	"github.com/dulguunb/chatter-go/client/tui"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
+)
+
+// import "github.com/dulguunb/chatter-go/client/tui"
+func CreateServerConnection(serverIp string, port int64) (*grpc.ClientConn, error) {
+	address := fmt.Sprintf("%s:%d", serverIp, port)
+	conn, err := grpc.NewClient(address, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		return nil, err
+	}
+	return conn, nil
+}
 
 func main() {
 	tui := tui.New()
 	tui.CreateLandingPage()
-	// userResponseChan := make(chan *chatterPb.ListUsersResponse)
-	// username := usernames.GenerateWords(1)
-	// clientService := client_grpc.New(username, "localhost")
-	// clientService.ValidateTheConnection()
-	// go clientService.ListUsersRequest()
-	// for {
-	// 	select {
-	// 	case resp := <-clientService.ListUserChan:
-	// 		println(len(resp.Users))
-	// 		for username, info := range resp.Users {
-	// 			infoUser := fmt.Sprintf("username: %s, clientTime:%d", username, info.ClientTime)
-	// 			println(infoUser)
-	// 		}
-	// 	}
-	// }
 }

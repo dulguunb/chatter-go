@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"fmt"
 	"log"
 	"net"
@@ -16,19 +15,14 @@ var (
 )
 
 func main() {
-	ctx := context.Background()
-	listUserServer := api.ListUserServer{}
-	chatServer := api.ChatServer{}
-	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", port))
+	// ctx := context.Background()
+	chatServer := api.NewChatServer()
+	lis, err := net.Listen("tcp", fmt.Sprintf("0.0.0.0:%d", port))
 	if err != nil {
 		log.Fatalf("failed to listen: %v", err)
 	}
 	s := grpc.NewServer()
-	chatterPb.RegisterListUsersRequestServiceServer(s, &listUserServer)
-	chatterPb.RegisterChatServer(s, &chatServer)
-	go listUserServer.CheckAvailableBackground(ctx)
-	go listUserServer.DeleteUnavailableUsers(ctx)
-	log.Printf("server listening at %v", lis.Addr())
+	chatterPb.RegisterChatServiceServer(s, chatServer)
 	if err := s.Serve(lis); err != nil {
 		log.Fatalf("failed to serve: %v", err)
 	}

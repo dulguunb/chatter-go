@@ -1,0 +1,90 @@
+syntax = "proto3";
+package chatter_message;
+option go_package = "github.com/dulguunb/chatter-go";
+
+message User {
+    string id = 1;
+    string username = 2;
+    string display_name = 3;
+    string avatar_url = 4;
+}
+
+message Message {
+    string id = 1;
+    string conversation_id = 2;
+    string sender_id = 3;
+    string content = 4;
+    int64 timestamp = 5; // Unix epoch (milliseconds)
+    string username = 6;
+}
+
+message Conversation {
+    string id = 1;
+    repeated string participant_ids = 2;
+    string name = 3; // Optional, for group chats
+    string last_message_id = 4;
+}
+
+// === Requests / Responses ===
+
+message SendMessageRequest {
+    string conversation_id = 1;
+    string sender_id = 2;
+    string content = 3;
+    string username = 4;
+}
+
+message SendMessageResponse {
+    Message message = 1;
+}
+
+message GetConversationsRequest {
+    string user_id = 1;
+}
+
+message GetConversationsResponse {
+    repeated Conversation conversations = 1;
+}
+
+message GetMessagesRequest {
+    string conversation_id = 1;
+    int64 limit = 2;   // e.g. 50
+    int64 offset = 3;  // for pagination
+}
+
+message GetMessagesResponse {
+    repeated Message messages = 1;
+}
+
+message CreateConversationRequest {
+    repeated string participant_ids = 1;
+    string name = 2; // optional
+}
+
+message CreateConversationResponse {
+    Conversation conversation = 1;
+}
+
+// === Chat Service ===
+message GetAvailableUsersRequest{
+    User user = 1;
+}
+message GetAvailableUsersResponse{
+    repeated User users = 1;
+}
+
+message AddUserRequest{
+    User user = 1;
+}
+message AddUserResponse{
+    User user = 1;
+}
+
+service ChatService {
+    rpc AddUser(AddUserRequest) returns (AddUserResponse);
+    rpc GetAvailableUsers(GetAvailableUsersRequest) returns (GetAvailableUsersResponse);
+    rpc SendMessage(SendMessageRequest) returns (SendMessageResponse);
+    rpc GetConversations(GetConversationsRequest) returns (GetConversationsResponse);
+    rpc GetMessages(GetMessagesRequest) returns (GetMessagesResponse);
+    rpc CreateConversation(CreateConversationRequest) returns (CreateConversationResponse);
+}
