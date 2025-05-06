@@ -2,11 +2,11 @@ package api
 
 import (
 	"context"
-	"log"
 	"sync"
 	"time"
 
 	"github.com/google/uuid" // Import the uuid library
+	"google.golang.org/grpc"
 
 	"github.com/dulguunb/chatter-go/client/logging"
 	"github.com/dulguunb/chatter-go/server/errors"
@@ -15,17 +15,18 @@ import (
 
 type ChatServer struct {
 	pb.UnimplementedChatServiceServer
-	mu            sync.Mutex
-	conversations map[string]*pb.Conversation
-	messages      map[string][]*pb.Message
-	Users         map[string]*pb.User
+	mu             sync.Mutex
+	conversations  map[string]*pb.Conversation
+	messages       map[string][]*pb.Message
+	newUserChannel chan *pb.User
+	Users          []*pb.User
 }
 
 func NewChatServer() *ChatServer {
 	return &ChatServer{
 		conversations: make(map[string]*pb.Conversation),
 		messages:      make(map[string][]*pb.Message),
-		Users:         make(map[string]*pb.User),
+		Users:         make([]*pb.User, 0),
 	}
 }
 
@@ -106,19 +107,23 @@ func (s *ChatServer) CreateConversation(ctx context.Context, req *pb.CreateConve
 	return &pb.CreateConversationResponse{Conversation: conv}, nil
 }
 
-func (s *ChatServer) GetAvailableUsers(ctx context.Context, in *pb.GetAvailableUsersRequest) (*pb.GetAvailableUsersResponse, error) {
-	users := make([]*pb.User, 0)
-	for _, user := range s.Users {
-		users = append(users, user)
+// (*chatter_go.GetAvailableUsersRequest, grpc.ServerStreamingServer[chatter_go.GetAvailableUsersResponse]) error
+func (s *ChatServer) StreamNewUsers(req *pb.GetAvailableUsersRequest, stream grpc.ServerStreamingServer[pb.GetAvailableUsersResponse]) error {
+	for {
+		resp := pb.GetAvailableUsersResponse{
+			Users: s.Users,
+		}
+		if err := stream.Send(&resp); err != nil {
+			logging.Logger.Sugar().Errorw(err.Error(), "stream_error")
+		}
+		time.Sleep(1 * time.Second)
 	}
-	log.Println("AvailableUsers")
-	log.Println(users)
-	return &pb.GetAvailableUsersResponse{Users: users}, nil
 }
 
 func (s *ChatServer) AddUser(ctx context.Context, in *pb.AddUserRequest) (*pb.AddUserResponse, error) {
-	s.Users[in.User.Id] = in.User
-	log.Println("Added users")
-	log.Println(s.Users)
+	s.mu.Lock()
+	s.Users = append(s.Users, in.User)
+	s.mu.Unlock()
+	logging.Logger.Sugar().Infof("Added a new user: %s", in.User.Username)
 	return &pb.AddUserResponse{User: in.User}, nil
 }

@@ -6,6 +6,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/dulguunb/chatter-go/client/logging"
 	chatterPb "github.com/dulguunb/go-chatter/gen"
 	"github.com/google/uuid"
 	"google.golang.org/grpc"
@@ -62,34 +63,29 @@ func (c *ListUsersService) addMe() (*chatterPb.AddUserResponse, error) {
 	return r, nil
 }
 
-func (c *ListUsersService) getAvailableUsersInternal() (*chatterPb.GetAvailableUsersResponse, error) {
+func (c *ListUsersService) GatherAvailableUsers() error {
 	client := chatterPb.NewChatServiceClient(c.Conn)
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*TIMEOUT)
-	defer cancel()
-	r, err := client.GetAvailableUsers(ctx, &chatterPb.GetAvailableUsersRequest{User: c.Me})
-	if err != nil {
-		return nil, err
-	}
-	return r, nil
-}
+	ctx := context.Background()
 
-func (c *ListUsersService) GatherAvailableUsers() {
-	ticker := time.NewTicker(2 * time.Second)
+	r, err := client.StreamNewUsers(ctx, &chatterPb.GetAvailableUsersRequest{User: c.Me})
+	if err != nil {
+		return err
+	}
+
 	go func() {
 		for {
-			select {
-			case <-ticker.C:
-				resp, err := c.getAvailableUsersInternal()
-				if err != nil {
-					c.Error <- err
-				}
-				for _, user := range resp.Users {
-					c.mu.Lock()
-					c.Users[user.Id] = user
-					c.mu.Unlock()
-				}
-				c.UsersChan <- c.Users
+
+			stream, err := r.Recv()
+			if err != nil {
+				logging.Logger.Sugar().Error(err)
 			}
+			for _, user := range stream.Users {
+				c.mu.Lock()
+				c.Users[user.Id] = user
+				c.mu.Unlock()
+			}
+			c.UsersChan <- c.Users
 		}
 	}()
+	return nil
 }

@@ -871,10 +871,10 @@ const file_chat_proto_rawDesc = "" +
 	"\x0eAddUserRequest\x12)\n" +
 	"\x04user\x18\x01 \x01(\v2\x15.chatter_message.UserR\x04user\"<\n" +
 	"\x0fAddUserResponse\x12)\n" +
-	"\x04user\x18\x01 \x01(\v2\x15.chatter_message.UserR\x04user2\xd3\x04\n" +
+	"\x04user\x18\x01 \x01(\v2\x15.chatter_message.UserR\x04user2\xd2\x04\n" +
 	"\vChatService\x12L\n" +
-	"\aAddUser\x12\x1f.chatter_message.AddUserRequest\x1a .chatter_message.AddUserResponse\x12j\n" +
-	"\x11GetAvailableUsers\x12).chatter_message.GetAvailableUsersRequest\x1a*.chatter_message.GetAvailableUsersResponse\x12X\n" +
+	"\aAddUser\x12\x1f.chatter_message.AddUserRequest\x1a .chatter_message.AddUserResponse\x12i\n" +
+	"\x0eStreamNewUsers\x12).chatter_message.GetAvailableUsersRequest\x1a*.chatter_message.GetAvailableUsersResponse0\x01\x12X\n" +
 	"\vSendMessage\x12#.chatter_message.SendMessageRequest\x1a$.chatter_message.SendMessageResponse\x12g\n" +
 	"\x10GetConversations\x12(.chatter_message.GetConversationsRequest\x1a).chatter_message.GetConversationsResponse\x12X\n" +
 	"\vGetMessages\x12#.chatter_message.GetMessagesRequest\x1a$.chatter_message.GetMessagesResponse\x12m\n" +
@@ -920,13 +920,13 @@ var file_chat_proto_depIdxs = []int32{
 	0,  // 6: chatter_message.AddUserRequest.user:type_name -> chatter_message.User
 	0,  // 7: chatter_message.AddUserResponse.user:type_name -> chatter_message.User
 	13, // 8: chatter_message.ChatService.AddUser:input_type -> chatter_message.AddUserRequest
-	11, // 9: chatter_message.ChatService.GetAvailableUsers:input_type -> chatter_message.GetAvailableUsersRequest
+	11, // 9: chatter_message.ChatService.StreamNewUsers:input_type -> chatter_message.GetAvailableUsersRequest
 	3,  // 10: chatter_message.ChatService.SendMessage:input_type -> chatter_message.SendMessageRequest
 	5,  // 11: chatter_message.ChatService.GetConversations:input_type -> chatter_message.GetConversationsRequest
 	7,  // 12: chatter_message.ChatService.GetMessages:input_type -> chatter_message.GetMessagesRequest
 	9,  // 13: chatter_message.ChatService.CreateConversation:input_type -> chatter_message.CreateConversationRequest
 	14, // 14: chatter_message.ChatService.AddUser:output_type -> chatter_message.AddUserResponse
-	12, // 15: chatter_message.ChatService.GetAvailableUsers:output_type -> chatter_message.GetAvailableUsersResponse
+	12, // 15: chatter_message.ChatService.StreamNewUsers:output_type -> chatter_message.GetAvailableUsersResponse
 	4,  // 16: chatter_message.ChatService.SendMessage:output_type -> chatter_message.SendMessageResponse
 	6,  // 17: chatter_message.ChatService.GetConversations:output_type -> chatter_message.GetConversationsResponse
 	8,  // 18: chatter_message.ChatService.GetMessages:output_type -> chatter_message.GetMessagesResponse

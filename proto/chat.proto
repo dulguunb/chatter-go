@@ -82,7 +82,7 @@ message AddUserResponse{
 
 service ChatService {
     rpc AddUser(AddUserRequest) returns (AddUserResponse);
-    rpc GetAvailableUsers(GetAvailableUsersRequest) returns (GetAvailableUsersResponse);
+    rpc StreamNewUsers(GetAvailableUsersRequest) returns (stream GetAvailableUsersResponse);
     rpc SendMessage(SendMessageRequest) returns (SendMessageResponse);
     rpc GetConversations(GetConversationsRequest) returns (GetConversationsResponse);
     rpc GetMessages(GetMessagesRequest) returns (GetMessagesResponse);
