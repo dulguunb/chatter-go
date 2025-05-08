@@ -7,6 +7,7 @@ message User {
     string username = 2;
     string display_name = 3;
     string avatar_url = 4;
+    bool available = 5;
 }
 
 message Message {
@@ -82,9 +83,9 @@ message AddUserResponse{
 
 service ChatService {
     rpc AddUser(AddUserRequest) returns (AddUserResponse);
-    rpc StreamNewUsers(GetAvailableUsersRequest) returns (stream GetAvailableUsersResponse);
+    rpc StreamUsersUpdate(GetAvailableUsersRequest) returns (stream GetAvailableUsersResponse);
     rpc SendMessage(SendMessageRequest) returns (SendMessageResponse);
-    rpc GetConversations(GetConversationsRequest) returns (GetConversationsResponse);
+    rpc GetConversations(GetConversationsRequest) returns (stream GetConversationsResponse);
     rpc GetMessages(GetMessagesRequest) returns (GetMessagesResponse);
     rpc CreateConversation(CreateConversationRequest) returns (CreateConversationResponse);
 }

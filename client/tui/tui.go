@@ -75,10 +75,9 @@ func (t *TUI) createFormPage() *tview.Form {
 		}
 		t.listClient = list_client.New(t.UserInfo.Username, conn)
 		t.chatClient = chat_client.New(t.listClient.Conn, t.listClient.Me)
+		usersChan, err := t.listClient.GetAvailableUsers()
+		go t.listAvailableUsers(usersChan)
 		go t.listenOnActiveConversation()
-		go t.listClient.GatherAvailableUsers()
-		t.listUsers()
-
 	}).AddButton("Quit", func() {
 		t.app.Stop()
 	})
@@ -90,25 +89,26 @@ func (t *TUI) createFormPage() *tview.Form {
 }
 
 func (t *TUI) listenOnActiveConversation() {
-	go t.chatClient.GetConversationsBackground()
-	go func() {
-		for {
-			select {
-			case conversationStarted := <-t.chatClient.ConversationInitiated:
-				if conversationStarted {
-					t.userList.Clear()
-					t.CreateMessengerPage()
-				}
-			}
+	conversationChan, err := t.chatClient.GetConversations()
+	if err != nil {
+		logging.Logger.Sugar().Error(err)
+	}
+	for {
+		select {
+		case conversation := <-conversationChan:
+			logging.Logger.Sugar().Info("listen on active convo: ")
+			logging.Logger.Sugar().Info(conversation)
+			t.userList.Clear()
+			t.CreateMessengerPage()
 		}
-	}()
+	}
 }
 
-func (t *TUI) listUsers() {
+func (t *TUI) listAvailableUsers(usersChan chan map[string]*chatterPb.User) {
 	go func() {
 		for {
 			select {
-			case resp := <-t.listClient.UsersChan:
+			case resp := <-usersChan:
 				go t.Redraw(resp)
 			}
 		}

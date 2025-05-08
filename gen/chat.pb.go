@@ -27,6 +27,7 @@ type User struct {
 	Username      string                 `protobuf:"bytes,2,opt,name=username,proto3" json:"username,omitempty"`
 	DisplayName   string                 `protobuf:"bytes,3,opt,name=display_name,json=displayName,proto3" json:"display_name,omitempty"`
 	AvatarUrl     string                 `protobuf:"bytes,4,opt,name=avatar_url,json=avatarUrl,proto3" json:"avatar_url,omitempty"`
+	Available     bool                   `protobuf:"varint,5,opt,name=available,proto3" json:"available,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -87,6 +88,13 @@ func (x *User) GetAvatarUrl() string {
 		return x.AvatarUrl
 	}
 	return ""
+}
+
+func (x *User) GetAvailable() bool {
+	if x != nil {
+		return x.Available
+	}
+	return false
 }
 
 type Message struct {
@@ -823,13 +831,14 @@ var File_chat_proto protoreflect.FileDescriptor
 const file_chat_proto_rawDesc = "" +
 	"\n" +
 	"\n" +
-	"chat.proto\x12\x0fchatter_message\"t\n" +
+	"chat.proto\x12\x0fchatter_message\"\x92\x01\n" +
 	"\x04User\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x1a\n" +
 	"\busername\x18\x02 \x01(\tR\busername\x12!\n" +
 	"\fdisplay_name\x18\x03 \x01(\tR\vdisplayName\x12\x1d\n" +
 	"\n" +
-	"avatar_url\x18\x04 \x01(\tR\tavatarUrl\"\xb3\x01\n" +
+	"avatar_url\x18\x04 \x01(\tR\tavatarUrl\x12\x1c\n" +
+	"\tavailable\x18\x05 \x01(\bR\tavailable\"\xb3\x01\n" +
 	"\aMessage\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12'\n" +
 	"\x0fconversation_id\x18\x02 \x01(\tR\x0econversationId\x12\x1b\n" +
@@ -871,12 +880,12 @@ const file_chat_proto_rawDesc = "" +
 	"\x0eAddUserRequest\x12)\n" +
 	"\x04user\x18\x01 \x01(\v2\x15.chatter_message.UserR\x04user\"<\n" +
 	"\x0fAddUserResponse\x12)\n" +
-	"\x04user\x18\x01 \x01(\v2\x15.chatter_message.UserR\x04user2\xd2\x04\n" +
+	"\x04user\x18\x01 \x01(\v2\x15.chatter_message.UserR\x04user2\xd7\x04\n" +
 	"\vChatService\x12L\n" +
-	"\aAddUser\x12\x1f.chatter_message.AddUserRequest\x1a .chatter_message.AddUserResponse\x12i\n" +
-	"\x0eStreamNewUsers\x12).chatter_message.GetAvailableUsersRequest\x1a*.chatter_message.GetAvailableUsersResponse0\x01\x12X\n" +
-	"\vSendMessage\x12#.chatter_message.SendMessageRequest\x1a$.chatter_message.SendMessageResponse\x12g\n" +
-	"\x10GetConversations\x12(.chatter_message.GetConversationsRequest\x1a).chatter_message.GetConversationsResponse\x12X\n" +
+	"\aAddUser\x12\x1f.chatter_message.AddUserRequest\x1a .chatter_message.AddUserResponse\x12l\n" +
+	"\x11StreamUsersUpdate\x12).chatter_message.GetAvailableUsersRequest\x1a*.chatter_message.GetAvailableUsersResponse0\x01\x12X\n" +
+	"\vSendMessage\x12#.chatter_message.SendMessageRequest\x1a$.chatter_message.SendMessageResponse\x12i\n" +
+	"\x10GetConversations\x12(.chatter_message.GetConversationsRequest\x1a).chatter_message.GetConversationsResponse0\x01\x12X\n" +
 	"\vGetMessages\x12#.chatter_message.GetMessagesRequest\x1a$.chatter_message.GetMessagesResponse\x12m\n" +
 	"\x12CreateConversation\x12*.chatter_message.CreateConversationRequest\x1a+.chatter_message.CreateConversationResponseB Z\x1egithub.com/dulguunb/chatter-gob\x06proto3"
 
@@ -920,13 +929,13 @@ var file_chat_proto_depIdxs = []int32{
 	0,  // 6: chatter_message.AddUserRequest.user:type_name -> chatter_message.User
 	0,  // 7: chatter_message.AddUserResponse.user:type_name -> chatter_message.User
 	13, // 8: chatter_message.ChatService.AddUser:input_type -> chatter_message.AddUserRequest
-	11, // 9: chatter_message.ChatService.StreamNewUsers:input_type -> chatter_message.GetAvailableUsersRequest
+	11, // 9: chatter_message.ChatService.StreamUsersUpdate:input_type -> chatter_message.GetAvailableUsersRequest
 	3,  // 10: chatter_message.ChatService.SendMessage:input_type -> chatter_message.SendMessageRequest
 	5,  // 11: chatter_message.ChatService.GetConversations:input_type -> chatter_message.GetConversationsRequest
 	7,  // 12: chatter_message.ChatService.GetMessages:input_type -> chatter_message.GetMessagesRequest
 	9,  // 13: chatter_message.ChatService.CreateConversation:input_type -> chatter_message.CreateConversationRequest
 	14, // 14: chatter_message.ChatService.AddUser:output_type -> chatter_message.AddUserResponse
-	12, // 15: chatter_message.ChatService.StreamNewUsers:output_type -> chatter_message.GetAvailableUsersResponse
+	12, // 15: chatter_message.ChatService.StreamUsersUpdate:output_type -> chatter_message.GetAvailableUsersResponse
 	4,  // 16: chatter_message.ChatService.SendMessage:output_type -> chatter_message.SendMessageResponse
 	6,  // 17: chatter_message.ChatService.GetConversations:output_type -> chatter_message.GetConversationsResponse
 	8,  // 18: chatter_message.ChatService.GetMessages:output_type -> chatter_message.GetMessagesResponse

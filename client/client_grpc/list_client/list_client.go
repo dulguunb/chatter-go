@@ -25,7 +25,6 @@ type ListUsersService struct {
 	Me         *chatterPb.User
 	creds      credentials.TransportCredentials
 	Conn       *grpc.ClientConn
-	UsersChan  chan map[string]*chatterPb.User
 	Users      map[string]*chatterPb.User
 	Error      chan error
 }
@@ -39,11 +38,10 @@ func New(username string, conn *grpc.ClientConn) *ListUsersService {
 			Username: username,
 			Id:       uuid.New().String(),
 		},
-		Conn:      conn,
-		creds:     insecure.NewCredentials(),
-		Error:     make(chan error),
-		UsersChan: make(chan map[string]*chatterPb.User),
-		Users:     map[string]*chatterPb.User{},
+		Conn:  conn,
+		creds: insecure.NewCredentials(),
+		Error: make(chan error),
+		Users: map[string]*chatterPb.User{},
 	}
 	_, err := listUsersService.addMe()
 	if err != nil {
@@ -63,29 +61,30 @@ func (c *ListUsersService) addMe() (*chatterPb.AddUserResponse, error) {
 	return r, nil
 }
 
-func (c *ListUsersService) GatherAvailableUsers() error {
+func (c *ListUsersService) GetAvailableUsers() (chan map[string]*chatterPb.User, error) {
 	client := chatterPb.NewChatServiceClient(c.Conn)
 	ctx := context.Background()
-
-	r, err := client.StreamNewUsers(ctx, &chatterPb.GetAvailableUsersRequest{User: c.Me})
+	r, err := client.StreamUsersUpdate(ctx, &chatterPb.GetAvailableUsersRequest{User: c.Me})
 	if err != nil {
-		return err
+		return nil, err
 	}
-
+	usersChan := make(chan map[string]*chatterPb.User)
 	go func() {
 		for {
-
 			stream, err := r.Recv()
 			if err != nil {
 				logging.Logger.Sugar().Error(err)
 			}
 			for _, user := range stream.Users {
-				c.mu.Lock()
-				c.Users[user.Id] = user
-				c.mu.Unlock()
+				if user.Id != c.Me.Id {
+					c.mu.Lock()
+					c.Users[user.Id] = user
+					c.mu.Unlock()
+				}
 			}
-			c.UsersChan <- c.Users
+			usersChan <- c.Users
 		}
 	}()
-	return nil
+
+	return usersChan, nil
 }

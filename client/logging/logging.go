@@ -1,8 +1,10 @@
 package logging
 
 import (
+	"fmt"
 	"os"
 
+	"github.com/google/uuid"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )
@@ -10,8 +12,9 @@ import (
 var Logger *zap.Logger
 
 func init() {
+	logUuid := uuid.NewString()
 	// Open the log file
-	file, err := os.OpenFile("app.log", os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0644)
+	file, err := os.OpenFile(fmt.Sprintf("app-%s.log", logUuid), os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0644)
 	if err != nil {
 		panic(err)
 	}

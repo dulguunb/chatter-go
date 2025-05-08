@@ -9,7 +9,6 @@ import (
 	"google.golang.org/grpc"
 
 	"github.com/dulguunb/chatter-go/client/logging"
-	"github.com/dulguunb/chatter-go/server/errors"
 	pb "github.com/dulguunb/go-chatter/gen"
 )
 
@@ -55,26 +54,28 @@ func (s *ChatServer) SendMessage(ctx context.Context, req *pb.SendMessageRequest
 	return &pb.SendMessageResponse{Message: msg}, nil
 }
 
-func (s *ChatServer) GetConversations(ctx context.Context, req *pb.GetConversationsRequest) (*pb.GetConversationsResponse, error) {
-	conversationIsFound := false
-	s.mu.Lock()
-	defer s.mu.Unlock()
-
-	var userConvs []*pb.Conversation
-	for _, conv := range s.conversations {
-		for _, pid := range conv.ParticipantIds {
-			if pid == req.UserId {
-				userConvs = append(userConvs, conv)
-				conversationIsFound = true
-				break
+func (s *ChatServer) GetConversations(req *pb.GetConversationsRequest, stream grpc.ServerStreamingServer[pb.GetConversationsResponse]) error {
+	for {
+		var userConvs []*pb.Conversation
+		for _, conv := range s.conversations {
+			for _, pid := range conv.ParticipantIds {
+				if pid == req.UserId {
+					userConvs = append(userConvs, conv)
+					break
+				}
 			}
 		}
+		resp := pb.GetConversationsResponse{
+			Conversations: userConvs,
+		}
+		logging.Logger.Sugar().Info("GetConversation: ")
+		logging.Logger.Sugar().Info(userConvs)
+		if err := stream.Send(&resp); err != nil {
+			logging.Logger.Sugar().Errorw(err.Error(), "stream_error")
+			return err
+		}
+		time.Sleep(1 * time.Second)
 	}
-	if !conversationIsFound {
-		return nil, errors.ConversationIsNotFound
-	}
-
-	return &pb.GetConversationsResponse{Conversations: userConvs}, nil
 }
 
 func (s *ChatServer) GetMessages(ctx context.Context, req *pb.GetMessagesRequest) (*pb.GetMessagesResponse, error) {
@@ -107,14 +108,14 @@ func (s *ChatServer) CreateConversation(ctx context.Context, req *pb.CreateConve
 	return &pb.CreateConversationResponse{Conversation: conv}, nil
 }
 
-// (*chatter_go.GetAvailableUsersRequest, grpc.ServerStreamingServer[chatter_go.GetAvailableUsersResponse]) error
-func (s *ChatServer) StreamNewUsers(req *pb.GetAvailableUsersRequest, stream grpc.ServerStreamingServer[pb.GetAvailableUsersResponse]) error {
+func (s *ChatServer) StreamUsersUpdate(req *pb.GetAvailableUsersRequest, stream grpc.ServerStreamingServer[pb.GetAvailableUsersResponse]) error {
 	for {
 		resp := pb.GetAvailableUsersResponse{
 			Users: s.Users,
 		}
 		if err := stream.Send(&resp); err != nil {
 			logging.Logger.Sugar().Errorw(err.Error(), "stream_error")
+			return err
 		}
 		time.Sleep(1 * time.Second)
 	}

@@ -17,32 +17,30 @@ import (
 const TIMEOUT = 10
 
 type ChatService struct {
-	Sender                *chatterPb.User
-	mu                    sync.Mutex
-	conn                  *grpc.ClientConn
-	timer                 int64 // send message counter
-	Conversation          *chatterPb.Conversation
-	ConversationInitiated chan bool
-	MessageChan           chan *chatterPb.Message
-	MessageIds            []string
-	lastMessage           int64
+	Sender       *chatterPb.User
+	mu           sync.Mutex
+	conn         *grpc.ClientConn
+	timer        int64 // send message counter
+	Conversation *chatterPb.Conversation
+	MessageChan  chan *chatterPb.Message
+	MessageIds   []string
+	lastMessage  int64
 }
 
 func New(conn *grpc.ClientConn, sender *chatterPb.User) *ChatService {
 	return &ChatService{
-		Sender:                sender,
-		conn:                  conn,
-		timer:                 0,
-		lastMessage:           0,
-		MessageChan:           make(chan *chatterPb.Message),
-		ConversationInitiated: make(chan bool),
-		MessageIds:            make([]string, 0),
+		Sender:       sender,
+		conn:         conn,
+		timer:        0,
+		lastMessage:  0,
+		MessageChan:  make(chan *chatterPb.Message),
+		MessageIds:   make([]string, 0),
+		Conversation: &chatterPb.Conversation{},
 	}
 }
 
 func (c *ChatService) CreateConversation(receiver *chatterPb.User) (*chatterPb.CreateConversationResponse, error) {
 	logging.Logger.Sugar().Infof("receiver name: %s, receiver id: %s", receiver.Username, receiver.Id)
-
 	client := chatterPb.NewChatServiceClient(c.conn)
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*TIMEOUT)
 	defer cancel()
@@ -55,47 +53,42 @@ func (c *ChatService) CreateConversation(receiver *chatterPb.User) (*chatterPb.C
 	c.Conversation = r.Conversation
 	c.mu.Unlock()
 	if err != nil {
-		logging.Logger.Fatal(err.Error())
+		logging.Logger.Sugar().Fatal(err)
 		return nil, err
 	}
-	c.lastMessage += 1
 	return r, nil
 }
 
-func (c *ChatService) GetConversationsBackground() {
-	ticker := time.NewTicker(1 * time.Second)
-	go func() {
-		for {
-			select {
-			case <-ticker.C:
-				resp, err := c.GetConversations(c.Sender.Id)
-				if err != nil {
-					logging.Logger.Sugar().Error(err)
-				}
-				if err == nil {
-					c.mu.Lock()
-					c.Conversation = resp
-					c.ConversationInitiated <- true
-					c.mu.Unlock()
-				}
-			}
-		}
-	}()
-}
-
-func (c *ChatService) GetConversations(userId string) (*chatterPb.Conversation, error) {
+func (c *ChatService) GetConversations() (chan *chatterPb.Conversation, error) {
 	client := chatterPb.NewChatServiceClient(c.conn)
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*TIMEOUT)
-	defer cancel()
-	conversationReq := chatterPb.GetConversationsRequest{
-		UserId: c.Sender.Id,
-	}
-	r, err := client.GetConversations(ctx, &conversationReq)
+	ctx := context.Background()
+	r, err := client.GetConversations(ctx,
+		&chatterPb.GetConversationsRequest{
+			UserId: c.Sender.Id,
+		})
 	if err != nil {
 		return nil, err
 	}
-	c.lastMessage += 1
-	return r.Conversations[0], nil
+	conversationChan := make(chan *chatterPb.Conversation, 0)
+	go func() {
+		for {
+			stream, err := r.Recv()
+			if err != nil {
+				logging.Logger.Sugar().Error(err)
+			}
+			logging.Logger.Sugar().Info(stream.Conversations)
+			// right now only one conversation per person is supported
+			if len(stream.Conversations) == 1 {
+				c.Conversation = stream.Conversations[0]
+				conversationChan <- stream.Conversations[0]
+				if err != nil {
+					logging.Logger.Sugar().Error(err)
+				}
+				break
+			}
+		}
+	}()
+	return conversationChan, nil
 }
 
 func (c *ChatService) SendMessage(senderId string, message string) error {
