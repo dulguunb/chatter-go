@@ -7,7 +7,7 @@ CONTAINER_TAG ?= "meow-chat-${VERSION}"
 linux: ${PROGRAM_NAME}/main.go
 	echo ${VERSION}
 	mkdir -p ${PROGRAM_NAME}/build
-	go build -ldflags="-X '${PROGRAM_NAME}/config.VERSION=${VERSION}'" ${PROGRAM_NAME}/main.go
+	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a -installsuffix cgo -ldflags="-X '${PROGRAM_NAME}/config.VERSION=${VERSION}'" ${PROGRAM_NAME}/main.go
 	mv main ${PROGRAM_NAME}/build/${PROGRAM_NAME}
 
 proto: proto/chat.proto
