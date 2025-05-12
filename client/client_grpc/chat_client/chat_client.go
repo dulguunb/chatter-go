@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"slices"
-	"strings"
 	"sync"
 	"time"
 
@@ -59,7 +58,7 @@ func (c *ChatService) CreateConversation(receiver *chatterPb.User) (*chatterPb.C
 	return r, nil
 }
 
-func (c *ChatService) GetConversations() (chan *chatterPb.Conversation, error) {
+func (c *ChatService) GetConversations() (chan *chatterPb.Conversation, grpc.ServerStreamingClient[chatterPb.GetConversationsResponse], error) {
 	client := chatterPb.NewChatServiceClient(c.conn)
 	ctx := context.Background()
 	r, err := client.GetConversations(ctx,
@@ -67,7 +66,7 @@ func (c *ChatService) GetConversations() (chan *chatterPb.Conversation, error) {
 			UserId: c.Sender.Id,
 		})
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	conversationChan := make(chan *chatterPb.Conversation, 0)
 	go func() {
@@ -88,7 +87,7 @@ func (c *ChatService) GetConversations() (chan *chatterPb.Conversation, error) {
 			}
 		}
 	}()
-	return conversationChan, nil
+	return conversationChan, r, nil
 }
 
 func (c *ChatService) SendMessage(senderId string, message string) error {
@@ -109,27 +108,37 @@ func (c *ChatService) SendMessage(senderId string, message string) error {
 	return nil
 }
 
-func (c *ChatService) ReceiveMessage(senderId string) (string, error) {
-
+func (c *ChatService) ReceiveMessage(senderId string) (chan []string, error) {
+	ctx := context.Background()
 	client := chatterPb.NewChatServiceClient(c.conn)
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*TIMEOUT)
-	defer cancel()
-	getMessageRequest := chatterPb.GetMessagesRequest{
-		ConversationId: c.Conversation.Id,
-		Offset:         0,
-	}
+	messagesChan := make(chan []string)
+	go func() {
+		for {
+			getMessageRequest := chatterPb.GetMessagesRequest{
+				ConversationId: c.Conversation.Id,
+				Offset:         0,
+			}
 
-	messageResponse, _ := client.GetMessages(ctx, &getMessageRequest)
-	newMessages := make([]string, 0)
+			stream, err := client.GetMessages(ctx, &getMessageRequest)
+			if err != nil {
+				logging.Logger.Sugar().Error(err)
+			}
+			messageResponse, err := stream.Recv()
+			if err != nil {
+				logging.Logger.Sugar().Error(err)
+			}
+			newMessages := make([]string, 0)
 
-	for _, message := range messageResponse.Messages {
-		oldMessage := slices.Contains(c.MessageIds, message.Id)
-		if !oldMessage {
-			c.MessageIds = append(c.MessageIds, message.Id)
-			newMessageDisplay := fmt.Sprintf("%s: %s", message.Username, message.Content)
-			newMessages = append(newMessages, newMessageDisplay)
+			for _, message := range messageResponse.Messages {
+				oldMessage := slices.Contains(c.MessageIds, message.Id)
+				if !oldMessage {
+					c.MessageIds = append(c.MessageIds, message.Id)
+					newMessageDisplay := fmt.Sprintf("%s: %s", message.Username, message.Content)
+					newMessages = append(newMessages, newMessageDisplay)
+				}
+			}
+			messagesChan <- newMessages
 		}
-	}
-
-	return strings.Join(newMessages, ""), nil
+	}()
+	return messagesChan, nil
 }

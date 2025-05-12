@@ -86,6 +86,6 @@ service ChatService {
     rpc StreamUsersUpdate(GetAvailableUsersRequest) returns (stream GetAvailableUsersResponse);
     rpc SendMessage(SendMessageRequest) returns (SendMessageResponse);
     rpc GetConversations(GetConversationsRequest) returns (stream GetConversationsResponse);
-    rpc GetMessages(GetMessagesRequest) returns (GetMessagesResponse);
+    rpc GetMessages(GetMessagesRequest) returns (stream GetMessagesResponse);
     rpc CreateConversation(CreateConversationRequest) returns (CreateConversationResponse);
 }

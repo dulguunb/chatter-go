@@ -4,10 +4,17 @@ VERSION=$$(git rev-parse HEAD | cut -c1-7)
 CONTAINER_TAG ?= "meow-chat-${VERSION}"
 # Example you can run the build:
 # PROGRAM_NAME=server make linux -f build.mk
-linux: ${PROGRAM_NAME}/main.go
+# PROGRAM_NAME=server make linux_static -f build.mk
+linux_static: ${PROGRAM_NAME}/main.go
 	echo ${VERSION}
 	mkdir -p ${PROGRAM_NAME}/build
 	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a -installsuffix cgo -ldflags="-X '${PROGRAM_NAME}/config.VERSION=${VERSION}'" ${PROGRAM_NAME}/main.go
+	mv main ${PROGRAM_NAME}/build/${PROGRAM_NAME}
+
+linux: ${PROGRAM_NAME}/main.go
+	echo ${VERSION}
+	mkdir -p ${PROGRAM_NAME}/build
+	GOOS=linux GOARCH=amd64 go build -ldflags="-X '${PROGRAM_NAME}/config.VERSION=${VERSION}'" ${PROGRAM_NAME}/main.go
 	mv main ${PROGRAM_NAME}/build/${PROGRAM_NAME}
 
 proto: proto/chat.proto

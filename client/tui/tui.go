@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"log"
 	"strings"
-	"time"
 
 	"github.com/dulguunb/chatter-go/client/client_grpc/chat_client"
 	"github.com/dulguunb/chatter-go/client/client_grpc/list_client"
@@ -89,7 +88,7 @@ func (t *TUI) createFormPage() *tview.Form {
 }
 
 func (t *TUI) listenOnActiveConversation() {
-	conversationChan, err := t.chatClient.GetConversations()
+	conversationChan, stream, err := t.chatClient.GetConversations()
 	if err != nil {
 		logging.Logger.Sugar().Error(err)
 	}
@@ -98,6 +97,10 @@ func (t *TUI) listenOnActiveConversation() {
 		case conversation := <-conversationChan:
 			logging.Logger.Sugar().Info("listen on active convo: ")
 			logging.Logger.Sugar().Info(conversation)
+			err := stream.CloseSend()
+			if err != nil {
+				logging.Logger.Sugar().Error(err)
+			}
 			t.userList.Clear()
 			t.CreateMessengerPage()
 		}
@@ -137,13 +140,14 @@ func (t *TUI) CreateMessengerPage() {
 		AddItem(t.messageView, 0, 1, false). // Message view takes priority in height
 		AddItem(t.inputField, 3, 1, true)    // Input field has a fixed height of 3 rows
 
+	messagesChan, _ := t.chatClient.ReceiveMessage(t.chatClient.Sender.Id)
+
 	go func() {
-		ticker := time.NewTicker(100 * time.Millisecond)
 		for {
 			select {
-			case <-ticker.C:
-				messages, _ := t.chatClient.ReceiveMessage(t.chatClient.Sender.Id)
-				if strings.TrimSpace(messages) != "" {
+			case messages := <-messagesChan:
+				messagesString := strings.Join(messages, "\n")
+				if strings.TrimSpace(messagesString) != "" {
 					fmt.Fprintf(t.messageView, "%s\n", messages)
 				}
 			}
