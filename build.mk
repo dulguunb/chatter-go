@@ -22,7 +22,7 @@ windows: ${PROGRAM_NAME}/main.go
 	echo ${VERSION}
 	mkdir -p ${PROGRAM_NAME}/build
 	GOOS=windows GOARCH=amd64 go build -ldflags="-X '${PROGRAM_NAME}/config.VERSION=${VERSION}'" ${PROGRAM_NAME}/main.go
-	mv main ${PROGRAM_NAME}/build/${PROGRAM_NAME}
+	mv main.exe ${PROGRAM_NAME}/build/${PROGRAM_NAME}.exe
 
 proto: proto/chat.proto
 	# make sure that the protoc-gen-go is in PATH
