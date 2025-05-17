@@ -7,6 +7,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/dulguunb/chatter-go/client/encryption"
 	"github.com/dulguunb/chatter-go/client/logging"
 	"github.com/dulguunb/chatter-go/client/usernames"
 	chatterPb "github.com/dulguunb/go-chatter/gen"
@@ -24,9 +25,20 @@ type ChatService struct {
 	MessageChan  chan *chatterPb.Message
 	MessageIds   []string
 	lastMessage  int64
+	keys         encryption.KeyMaterial
 }
 
 func New(conn *grpc.ClientConn, sender *chatterPb.User) *ChatService {
+	keys := *encryption.New()
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*TIMEOUT)
+	client := chatterPb.NewChatServiceClient(conn)
+	defer cancel()
+	_, err := client.SendPublicKey(ctx, &chatterPb.PublicKeySendRequest{ParticipantId: sender.Id, PublicKey: string(keys.GetMyPublicKey())})
+	if err != nil {
+		logging.Logger.Sugar().Error("could not send public keys for e2e encryption")
+		logging.Logger.Sugar().Fatal(err)
+	}
+
 	return &ChatService{
 		Sender:       sender,
 		conn:         conn,
@@ -35,6 +47,7 @@ func New(conn *grpc.ClientConn, sender *chatterPb.User) *ChatService {
 		MessageChan:  make(chan *chatterPb.Message),
 		MessageIds:   make([]string, 0),
 		Conversation: &chatterPb.Conversation{},
+		keys:         keys,
 	}
 }
 
@@ -91,27 +104,57 @@ func (c *ChatService) GetConversations() (chan *chatterPb.Conversation, grpc.Ser
 }
 
 func (c *ChatService) SendMessage(senderId string, message string) error {
-	logging.Logger.Sugar().Infof("senderId: %s message: %s", senderId, message)
 	client := chatterPb.NewChatServiceClient(c.conn)
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*TIMEOUT)
 	defer cancel()
+	logging.Logger.Sugar().Infof("senderId: %s message: %s", senderId, message)
+
+	if c.keys.GetOtherPublicKey() == "" {
+		c.SetOthersPublicKey(ctx, client, senderId)
+	}
+
+	encryptedMessage, err := c.keys.EncryptMessage(message)
+	logging.Logger.Sugar().Info("encrpyted message: ")
+	logging.Logger.Sugar().Info(encryptedMessage)
+	if err != nil {
+		logging.Logger.Sugar().Fatal(encryptedMessage)
+	}
+	//  TODO: Integrate the encryption properly
 	messageRequest := chatterPb.SendMessageRequest{
 		ConversationId: c.Conversation.Id,
 		Content:        message,
 		SenderId:       senderId,
 		Username:       c.Sender.Username,
 	}
-	_, err := client.SendMessage(ctx, &messageRequest)
+	_, err = client.SendMessage(ctx, &messageRequest)
 	if err != nil {
 		return err
 	}
+
 	return nil
+}
+
+func (c *ChatService) SetOthersPublicKey(ctx context.Context, client chatterPb.ChatServiceClient, senderId string) {
+	publicKeyResp, err := client.GetPublicKeyOfPartner(ctx, &chatterPb.PublicKeyRequest{
+		ParticipantId: senderId,
+	})
+	if err != nil {
+		logging.Logger.Sugar().Fatal(err)
+	}
+	logging.Logger.Sugar().Info("others key: ", publicKeyResp.PublicKey)
+	err = c.keys.SetOthersKey(publicKeyResp.PublicKey)
+	if err != nil {
+		logging.Logger.Sugar().Fatal(err)
+	}
 }
 
 func (c *ChatService) ReceiveMessage(senderId string) (chan []string, error) {
 	ctx := context.Background()
 	client := chatterPb.NewChatServiceClient(c.conn)
 	messagesChan := make(chan []string)
+	if c.keys.GetOtherPublicKey() == "" {
+		c.SetOthersPublicKey(ctx, client, senderId)
+	}
 	go func() {
 		for {
 			getMessageRequest := chatterPb.GetMessagesRequest{

@@ -19,18 +19,22 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	ChatService_AddUser_FullMethodName            = "/chatter_message.ChatService/AddUser"
-	ChatService_StreamUsersUpdate_FullMethodName  = "/chatter_message.ChatService/StreamUsersUpdate"
-	ChatService_SendMessage_FullMethodName        = "/chatter_message.ChatService/SendMessage"
-	ChatService_GetConversations_FullMethodName   = "/chatter_message.ChatService/GetConversations"
-	ChatService_GetMessages_FullMethodName        = "/chatter_message.ChatService/GetMessages"
-	ChatService_CreateConversation_FullMethodName = "/chatter_message.ChatService/CreateConversation"
+	ChatService_SendPublicKey_FullMethodName         = "/chatter_message.ChatService/SendPublicKey"
+	ChatService_GetPublicKeyOfPartner_FullMethodName = "/chatter_message.ChatService/GetPublicKeyOfPartner"
+	ChatService_AddUser_FullMethodName               = "/chatter_message.ChatService/AddUser"
+	ChatService_StreamUsersUpdate_FullMethodName     = "/chatter_message.ChatService/StreamUsersUpdate"
+	ChatService_SendMessage_FullMethodName           = "/chatter_message.ChatService/SendMessage"
+	ChatService_GetConversations_FullMethodName      = "/chatter_message.ChatService/GetConversations"
+	ChatService_GetMessages_FullMethodName           = "/chatter_message.ChatService/GetMessages"
+	ChatService_CreateConversation_FullMethodName    = "/chatter_message.ChatService/CreateConversation"
 )
 
 // ChatServiceClient is the client API for ChatService service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type ChatServiceClient interface {
+	SendPublicKey(ctx context.Context, in *PublicKeySendRequest, opts ...grpc.CallOption) (*PublicKeySendResponse, error)
+	GetPublicKeyOfPartner(ctx context.Context, in *PublicKeyRequest, opts ...grpc.CallOption) (*PublicKeyResponse, error)
 	AddUser(ctx context.Context, in *AddUserRequest, opts ...grpc.CallOption) (*AddUserResponse, error)
 	StreamUsersUpdate(ctx context.Context, in *GetAvailableUsersRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[GetAvailableUsersResponse], error)
 	SendMessage(ctx context.Context, in *SendMessageRequest, opts ...grpc.CallOption) (*SendMessageResponse, error)
@@ -45,6 +49,26 @@ type chatServiceClient struct {
 
 func NewChatServiceClient(cc grpc.ClientConnInterface) ChatServiceClient {
 	return &chatServiceClient{cc}
+}
+
+func (c *chatServiceClient) SendPublicKey(ctx context.Context, in *PublicKeySendRequest, opts ...grpc.CallOption) (*PublicKeySendResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(PublicKeySendResponse)
+	err := c.cc.Invoke(ctx, ChatService_SendPublicKey_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *chatServiceClient) GetPublicKeyOfPartner(ctx context.Context, in *PublicKeyRequest, opts ...grpc.CallOption) (*PublicKeyResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(PublicKeyResponse)
+	err := c.cc.Invoke(ctx, ChatService_GetPublicKeyOfPartner_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
 }
 
 func (c *chatServiceClient) AddUser(ctx context.Context, in *AddUserRequest, opts ...grpc.CallOption) (*AddUserResponse, error) {
@@ -138,6 +162,8 @@ func (c *chatServiceClient) CreateConversation(ctx context.Context, in *CreateCo
 // All implementations must embed UnimplementedChatServiceServer
 // for forward compatibility.
 type ChatServiceServer interface {
+	SendPublicKey(context.Context, *PublicKeySendRequest) (*PublicKeySendResponse, error)
+	GetPublicKeyOfPartner(context.Context, *PublicKeyRequest) (*PublicKeyResponse, error)
 	AddUser(context.Context, *AddUserRequest) (*AddUserResponse, error)
 	StreamUsersUpdate(*GetAvailableUsersRequest, grpc.ServerStreamingServer[GetAvailableUsersResponse]) error
 	SendMessage(context.Context, *SendMessageRequest) (*SendMessageResponse, error)
@@ -154,6 +180,12 @@ type ChatServiceServer interface {
 // pointer dereference when methods are called.
 type UnimplementedChatServiceServer struct{}
 
+func (UnimplementedChatServiceServer) SendPublicKey(context.Context, *PublicKeySendRequest) (*PublicKeySendResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SendPublicKey not implemented")
+}
+func (UnimplementedChatServiceServer) GetPublicKeyOfPartner(context.Context, *PublicKeyRequest) (*PublicKeyResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetPublicKeyOfPartner not implemented")
+}
 func (UnimplementedChatServiceServer) AddUser(context.Context, *AddUserRequest) (*AddUserResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method AddUser not implemented")
 }
@@ -191,6 +223,42 @@ func RegisterChatServiceServer(s grpc.ServiceRegistrar, srv ChatServiceServer) {
 		t.testEmbeddedByValue()
 	}
 	s.RegisterService(&ChatService_ServiceDesc, srv)
+}
+
+func _ChatService_SendPublicKey_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(PublicKeySendRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ChatServiceServer).SendPublicKey(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ChatService_SendPublicKey_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ChatServiceServer).SendPublicKey(ctx, req.(*PublicKeySendRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ChatService_GetPublicKeyOfPartner_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(PublicKeyRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ChatServiceServer).GetPublicKeyOfPartner(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ChatService_GetPublicKeyOfPartner_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ChatServiceServer).GetPublicKeyOfPartner(ctx, req.(*PublicKeyRequest))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
 func _ChatService_AddUser_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -287,6 +355,14 @@ var ChatService_ServiceDesc = grpc.ServiceDesc{
 	ServiceName: "chatter_message.ChatService",
 	HandlerType: (*ChatServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "SendPublicKey",
+			Handler:    _ChatService_SendPublicKey_Handler,
+		},
+		{
+			MethodName: "GetPublicKeyOfPartner",
+			Handler:    _ChatService_GetPublicKeyOfPartner_Handler,
+		},
 		{
 			MethodName: "AddUser",
 			Handler:    _ChatService_AddUser_Handler,

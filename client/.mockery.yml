@@ -1,0 +1,18 @@
+all: false
+dir: '{{.InterfaceDir}}'
+force-file-write: true
+formatter: goimports
+log-level: info
+structname: '{{.Mock}}{{.InterfaceName}}'
+pkgname: '{{.SrcPackageName}}'
+recursive: false
+require-template-schema-exists: true
+template: testify
+template-schema: '{{.Template}}.schema.json'
+packages:
+  client_grpc/chat_client/chat_client.go:
+    config:
+      all: true
+  client_grpc/list_client/list_client.go:
+    config:
+      all: true

@@ -2,6 +2,7 @@
 PROGRAM_NAME ?= ""
 VERSION=$$(git rev-parse HEAD | cut -c1-7)
 CONTAINER_TAG ?= "meow-chat-${VERSION}"
+PATH ?= "${PATH}:${HOME}/go/bin/"
 # Example you can run the build:
 # PROGRAM_NAME=server make linux -f build.mk
 # PROGRAM_NAME=server make linux_static -f build.mk
@@ -17,6 +18,12 @@ linux: ${PROGRAM_NAME}/main.go
 	GOOS=linux GOARCH=amd64 go build -ldflags="-X '${PROGRAM_NAME}/config.VERSION=${VERSION}'" ${PROGRAM_NAME}/main.go
 	mv main ${PROGRAM_NAME}/build/${PROGRAM_NAME}
 
+windows: ${PROGRAM_NAME}/main.go
+	echo ${VERSION}
+	mkdir -p ${PROGRAM_NAME}/build
+	GOOS=windows GOARCH=amd64 go build -ldflags="-X '${PROGRAM_NAME}/config.VERSION=${VERSION}'" ${PROGRAM_NAME}/main.go
+	mv main ${PROGRAM_NAME}/build/${PROGRAM_NAME}
+
 proto: proto/chat.proto
 	# make sure that the protoc-gen-go is in PATH
 	go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
@@ -26,3 +33,7 @@ proto: proto/chat.proto
 build_container: linux
 	mv ${PROGRAM_NAME}/build/${PROGRAM_NAME} deploy/docker
 	cd deploy/docker && docker build --file=server.Dockerfile --build-arg SERVER_BUILD_PATH=./server -t=${CONTAINER_TAG} .
+
+mockery:
+	go install github.com/vektra/mockery/v3@v3.2.5
+	mockery client/

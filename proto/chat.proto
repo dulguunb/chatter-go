@@ -22,11 +22,33 @@ message Message {
 message Conversation {
     string id = 1;
     repeated string participant_ids = 2;
-    string name = 3; // Optional, for group chats
-    string last_message_id = 4;
+    string name = 4;
+    string last_message_id = 5;
 }
 
+message PublicKey {
+    string participant_id = 1;
+    string public_key = 2;
+}
 // === Requests / Responses ===
+message PublicKeySendRequest {
+    string participant_id = 1;
+    string public_key = 2;
+}
+
+message PublicKeySendResponse {
+    string participant_id = 1;
+    int32 success = 2;
+}
+
+message PublicKeyRequest {
+    string participant_id = 1;
+}
+
+message PublicKeyResponse{
+    string participant_id = 1;
+    string public_key = 2;
+}
 
 message SendMessageRequest {
     string conversation_id = 1;
@@ -82,6 +104,8 @@ message AddUserResponse{
 }
 
 service ChatService {
+    rpc SendPublicKey(PublicKeySendRequest) returns (PublicKeySendResponse);
+    rpc GetPublicKeyOfPartner(PublicKeyRequest) returns (PublicKeyResponse);
     rpc AddUser(AddUserRequest) returns (AddUserResponse);
     rpc StreamUsersUpdate(GetAvailableUsersRequest) returns (stream GetAvailableUsersResponse);
     rpc SendMessage(SendMessageRequest) returns (SendMessageResponse);

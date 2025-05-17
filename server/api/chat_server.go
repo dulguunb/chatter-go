@@ -17,6 +17,7 @@ import (
 	pb "github.com/dulguunb/go-chatter/gen"
 )
 
+// TODO: Create another layer of abstraction for message store: Memory only or with database
 type ChatServer struct {
 	pb.UnimplementedChatServiceServer
 	mu            sync.Mutex
@@ -27,6 +28,8 @@ type ChatServer struct {
 
 	newUserChannel chan *pb.User
 	Users          []*pb.User
+
+	PublicKeys map[string]string
 }
 
 func NewChatServer() *ChatServer {
@@ -39,6 +42,7 @@ func NewChatServer() *ChatServer {
 		messages:      make(map[string][]*pb.Message),
 		Users:         make([]*pb.User, 0),
 		publisher:     pubSub,
+		PublicKeys:    make(map[string]string),
 	}
 }
 
@@ -107,7 +111,7 @@ func (s *ChatServer) GetMessages(req *pb.GetMessagesRequest, stream grpc.ServerS
 	defer cancel()
 
 	topic := "updated_convo_" + convoID
-	messages, err := s.publisher.Subscribe(context.Background(), topic)
+	messages, err := s.publisher.Subscribe(ctx, topic)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -190,4 +194,21 @@ func (s *ChatServer) AddUser(ctx context.Context, in *pb.AddUserRequest) (*pb.Ad
 	s.mu.Unlock()
 	logging.Logger.Sugar().Infof("Added a new user: %s", in.User.Username)
 	return &pb.AddUserResponse{User: in.User}, nil
+}
+
+func (s *ChatServer) SendPublicKey(ctx context.Context, in *pb.PublicKeySendRequest) (*pb.PublicKeySendResponse, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.PublicKeys[in.ParticipantId] = in.PublicKey
+	logging.Logger.Sugar().Info("public key: ")
+	logging.Logger.Sugar().Info(s.PublicKeys)
+	return &pb.PublicKeySendResponse{ParticipantId: in.ParticipantId, Success: 1}, nil
+}
+
+func (s *ChatServer) GetPublicKeyOfPartner(ctx context.Context, in *pb.PublicKeyRequest) (*pb.PublicKeyResponse, error) {
+	if s.PublicKeys[in.ParticipantId] != "" {
+		return &pb.PublicKeyResponse{PublicKey: s.PublicKeys[in.ParticipantId], ParticipantId: in.ParticipantId}, nil
+	} else {
+		return &pb.PublicKeyResponse{PublicKey: "", ParticipantId: in.ParticipantId}, nil
+	}
 }
