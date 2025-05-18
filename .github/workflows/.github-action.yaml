@@ -34,7 +34,7 @@ jobs:
 
       - name: Build server binary
         run: |
-          PROGRAM_NAME=server make linux -f build.mk
+          PROGRAM_NAME=server make linux_static -f build.mk
 
       - name: Build client binary
         run: |
