@@ -35,8 +35,9 @@ func New(username string, conn *grpc.ClientConn) *ListUsersService {
 
 	listUsersService := &ListUsersService{
 		Me: &chatterPb.User{
-			Username: username,
-			Id:       uuid.New().String(),
+			Username:  username,
+			Id:        uuid.New().String(),
+			Available: true,
 		},
 		Conn:  conn,
 		creds: insecure.NewCredentials(),

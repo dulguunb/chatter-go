@@ -3,7 +3,6 @@ package api
 import (
 	"context"
 	"log"
-	"sync"
 	"time"
 
 	"github.com/ThreeDotsLabs/watermill"
@@ -14,42 +13,27 @@ import (
 	"google.golang.org/protobuf/proto"
 
 	"github.com/dulguunb/chatter-go/client/logging"
+	"github.com/dulguunb/chatter-go/server/store"
 	pb "github.com/dulguunb/go-chatter/gen"
 )
 
 // TODO: Create another layer of abstraction for message store: Memory only or with database
 type ChatServer struct {
 	pb.UnimplementedChatServiceServer
-	mu            sync.Mutex
-	conversations map[string]*pb.Conversation
-
-	messages  map[string][]*pb.Message
 	publisher *gochannel.GoChannel // TODO: message.Publisher interface for flexibility
-
-	newUserChannel chan *pb.User
-	Users          []*pb.User
-
-	PublicKeys map[string]string
+	dataStore store.DataStoreHandler
 }
 
-func NewChatServer() *ChatServer {
+func NewChatServer(dataStore store.DataStoreHandler) *ChatServer {
 	logger := watermill.NewStdLogger(false, false) // Simple logger
-
 	pubSub := gochannel.NewGoChannel(gochannel.Config{}, logger)
-
 	return &ChatServer{
-		conversations: make(map[string]*pb.Conversation),
-		messages:      make(map[string][]*pb.Message),
-		Users:         make([]*pb.User, 0),
-		publisher:     pubSub,
-		PublicKeys:    make(map[string]string),
+		publisher: pubSub,
+		dataStore: dataStore,
 	}
 }
 
 func (s *ChatServer) SendMessage(ctx context.Context, req *pb.SendMessageRequest) (*pb.SendMessageResponse, error) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-
 	msg := &pb.Message{
 		Id:             uuid.NewString(),
 		ConversationId: req.ConversationId,
@@ -58,14 +42,17 @@ func (s *ChatServer) SendMessage(ctx context.Context, req *pb.SendMessageRequest
 		Timestamp:      time.Now().UnixMilli(),
 		Username:       req.Username,
 	}
+	s.dataStore.SendMessage(msg, req.ConversationId)
 
-	s.messages[req.ConversationId] = append(s.messages[req.ConversationId], msg)
 	var updatedConv *pb.Conversation
-
-	if conv, ok := s.conversations[req.ConversationId]; ok {
+	conv, err := s.dataStore.GetConversation(req.ConversationId)
+	if err != nil {
+		logging.Logger.Sugar().Error(err)
+	} else {
 		conv.LastMessageId = msg.Id
 		updatedConv = conv
 	}
+	logging.Logger.Sugar().Infof("SendMessage(): ConversationId: %s", req.ConversationId)
 
 	if updatedConv != nil && s.publisher != nil {
 		payload, err := proto.Marshal(updatedConv)
@@ -85,23 +72,37 @@ func (s *ChatServer) SendMessage(ctx context.Context, req *pb.SendMessageRequest
 }
 
 func (s *ChatServer) GetConversations(req *pb.GetConversationsRequest, stream grpc.ServerStreamingServer[pb.GetConversationsResponse]) error {
+	ctx, cancel := context.WithCancel(stream.Context())
+	defer cancel()
+	conversationChannel := make(chan *pb.Conversation)
+	topic := "created_convo_" + req.UserId
+	messages, err := s.publisher.Subscribe(ctx, topic)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	go func() {
+		logging.Logger.Sugar().Infof("Subscriber started, listening on topic %q", topic)
+		for msg := range messages {
+			receivedConv := &pb.Conversation{}
+			err = proto.Unmarshal(msg.Payload, receivedConv)
+			conversationChannel <- receivedConv
+		}
+	}()
+
 	for {
-		var userConvs []*pb.Conversation
-		for _, conv := range s.conversations {
-			for _, pid := range conv.ParticipantIds {
-				if pid == req.UserId {
-					userConvs = append(userConvs, conv)
-					break
-				}
+		select {
+		case conversation := <-conversationChannel:
+			resp := pb.GetConversationsResponse{
+				Conversations: []*pb.Conversation{conversation},
 			}
+			if err := stream.Send(&resp); err != nil {
+				return err
+			}
+		case <-ctx.Done():
+			logging.Logger.Sugar().Infof("gRPC stream context cancelled for getConversation() %s", ctx.Err())
+			return ctx.Err()
 		}
-		resp := pb.GetConversationsResponse{
-			Conversations: userConvs,
-		}
-		if err := stream.Send(&resp); err != nil {
-			return err
-		}
-		time.Sleep(1 * time.Second)
 	}
 }
 
@@ -127,7 +128,10 @@ func (s *ChatServer) GetMessages(req *pb.GetMessagesRequest, stream grpc.ServerS
 			if err != nil {
 				logging.Logger.Sugar().Error(err)
 			} else {
-				message := s.messages[receivedConv.Id]
+				message, err := s.dataStore.GetMessages(receivedConv.Id)
+				if err != nil {
+					logging.Logger.Sugar().Error(err)
+				}
 				msgChannel <- message
 				logging.Logger.Sugar().Info(message)
 			}
@@ -161,25 +165,36 @@ func (s *ChatServer) GetMessages(req *pb.GetMessagesRequest, stream grpc.ServerS
 }
 
 func (s *ChatServer) CreateConversation(ctx context.Context, req *pb.CreateConversationRequest) (*pb.CreateConversationResponse, error) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-
 	conv := &pb.Conversation{
 		Id:             uuid.NewString(),
 		ParticipantIds: req.ParticipantIds,
 		Name:           req.Name,
 		LastMessageId:  "",
 	}
+	err := s.dataStore.SetConversation(conv.Id, conv)
+	// Publish a topic per conversation participants
+	for _, participantId := range req.ParticipantIds {
+		payload, err := proto.Marshal(conv)
+		if err != nil {
+			logging.Logger.Sugar().Errorf("Error marshalling conversation for Watermill: %v", err)
+		}
+		watermillMsg := message.NewMessage(uuid.NewString(), payload)
+		topic := "created_convo_" + participantId
+		if err := s.publisher.Publish(topic, watermillMsg); err != nil {
+			logging.Logger.Sugar().Info("Error publishing conversation update to Watermill topic %s: %v", topic, err)
+		} else {
+			logging.Logger.Sugar().Info("Published update for conversation %s to topic %s", conv.Id, topic)
+		}
+	}
 
-	s.conversations[conv.Id] = conv
-
-	return &pb.CreateConversationResponse{Conversation: conv}, nil
+	return &pb.CreateConversationResponse{Conversation: conv}, err
 }
 
 func (s *ChatServer) StreamUsersUpdate(req *pb.GetAvailableUsersRequest, stream grpc.ServerStreamingServer[pb.GetAvailableUsersResponse]) error {
 	for {
+		users := s.dataStore.GetAvailableUsers()
 		resp := pb.GetAvailableUsersResponse{
-			Users: s.Users,
+			Users: users,
 		}
 		if err := stream.Send(&resp); err != nil {
 			return err
@@ -189,26 +204,22 @@ func (s *ChatServer) StreamUsersUpdate(req *pb.GetAvailableUsersRequest, stream 
 }
 
 func (s *ChatServer) AddUser(ctx context.Context, in *pb.AddUserRequest) (*pb.AddUserResponse, error) {
-	s.mu.Lock()
-	s.Users = append(s.Users, in.User)
-	s.mu.Unlock()
+	s.dataStore.AddUser(in.User)
 	logging.Logger.Sugar().Infof("Added a new user: %s", in.User.Username)
 	return &pb.AddUserResponse{User: in.User}, nil
 }
 
 func (s *ChatServer) SendPublicKey(ctx context.Context, in *pb.PublicKeySendRequest) (*pb.PublicKeySendResponse, error) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	s.PublicKeys[in.ParticipantId] = in.PublicKey
+	err := s.dataStore.SetPublicKey(in.ParticipantId, in.PublicKey)
+	if err != nil {
+		logging.Logger.Sugar().Error(err)
+	}
 	logging.Logger.Sugar().Info("public key: ")
-	logging.Logger.Sugar().Info(s.PublicKeys)
-	return &pb.PublicKeySendResponse{ParticipantId: in.ParticipantId, Success: 1}, nil
+	logging.Logger.Sugar().Info(in.PublicKey)
+	return &pb.PublicKeySendResponse{ParticipantId: in.ParticipantId, Success: 1}, err
 }
 
 func (s *ChatServer) GetPublicKeyOfPartner(ctx context.Context, in *pb.PublicKeyRequest) (*pb.PublicKeyResponse, error) {
-	if s.PublicKeys[in.ParticipantId] != "" {
-		return &pb.PublicKeyResponse{PublicKey: s.PublicKeys[in.ParticipantId], ParticipantId: in.ParticipantId}, nil
-	} else {
-		return &pb.PublicKeyResponse{PublicKey: "", ParticipantId: in.ParticipantId}, nil
-	}
+	publicKey, err := s.dataStore.GetPublicKey(in.ParticipantId)
+	return &pb.PublicKeyResponse{PublicKey: publicKey, ParticipantId: in.ParticipantId}, err
 }

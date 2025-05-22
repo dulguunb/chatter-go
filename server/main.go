@@ -6,6 +6,7 @@ import (
 	"net"
 
 	"github.com/dulguunb/chatter-go/server/api"
+	"github.com/dulguunb/chatter-go/server/store"
 	chatterPb "github.com/dulguunb/go-chatter/gen"
 	"google.golang.org/grpc"
 )
@@ -15,7 +16,8 @@ var (
 )
 
 func main() {
-	chatServer := api.NewChatServer()
+	memStore := store.NewMemoryStore()
+	chatServer := api.NewChatServer(memStore)
 	lis, err := net.Listen("tcp", fmt.Sprintf("0.0.0.0:%d", port))
 	if err != nil {
 		log.Fatalf("failed to listen: %v", err)
