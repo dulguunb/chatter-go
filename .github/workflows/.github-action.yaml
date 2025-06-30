@@ -36,10 +36,19 @@ jobs:
         run: |
           PROGRAM_NAME=server make linux_static -f build.mk
 
-      - name: Build client binary
-        run: |
-          PROGRAM_NAME=client make linux_static -f build.mk
-          PROGRAM_NAME=client make windows -f build.mk
+      - name: Set Up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.32.0'
+          channel: 'stable'
+        run:
+          cd flutter_client
+          make linux
+
+#      - name: Build client binary
+#        run: |
+#          PROGRAM_NAME=client make linux_static -f build.mk
+#          PROGRAM_NAME=client make windows -f build.mk
 
       - name: List build outputs
         run: |
@@ -56,5 +65,6 @@ jobs:
             server/build/server
             client/build/client
             client/build/client.exe
+            flutter_client/linux/x64/release/bundle/meow
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

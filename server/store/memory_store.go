@@ -2,6 +2,7 @@ package store
 
 import (
 	"fmt"
+	"slices"
 	"sync"
 
 	pb "github.com/dulguunb/go-chatter/gen"
@@ -43,6 +44,7 @@ func (m *MemoryStoreHandler) SetPublicKey(userid string, publicKey string) error
 	// TODO: check the memory limit
 	return nil
 }
+
 func (m *MemoryStoreHandler) GetPublicKey(userid string) (string, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
@@ -72,6 +74,16 @@ func (m *MemoryStoreHandler) GetConversation(convId string) (*pb.Conversation, e
 		return m, nil
 	}
 	return nil, fmt.Errorf("convId: %s does not belong to any conversation", convId)
+}
+
+func (m *MemoryStoreHandler) GetConversationsFromUserId(userId string) ([]*pb.Conversation, error) {
+	conversations := make([]*pb.Conversation, 0)
+	for _, conv := range m.conversations {
+		if slices.Contains(conv.ParticipantIds, userId) {
+			conversations = append(conversations, conv)
+		}
+	}
+	return conversations, nil
 }
 
 func (m *MemoryStoreHandler) GetMessages(convId string) ([]*pb.Message, error) {

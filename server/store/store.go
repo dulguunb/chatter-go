@@ -14,4 +14,5 @@ type DataStoreHandler interface {
 	SetPublicKey(userId string, publicKey string) error
 	GetPublicKey(userId string) (string, error)
 	GetAvailableUsers() []*pb.User
+	GetConversationsFromUserId(userId string) ([]*pb.Conversation, error)
 }

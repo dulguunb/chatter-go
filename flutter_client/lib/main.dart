@@ -1,11 +1,9 @@
 import 'package:flutter/material.dart';
 import 'widgets/landing_page_login.dart';
-
-void main() {
+void main() async {
   runApp(const MainApp());
+
 }
-
-
 
 class MainApp extends StatelessWidget {
   const MainApp({super.key});
@@ -17,13 +15,7 @@ class MainApp extends StatelessWidget {
       home: Scaffold(
         appBar: AppBar(title: const Text(appTitle)),
         // #docregion add-widget
-        body: const SingleChildScrollView(
-          child: Column(
-            children: [
-              LandingPageForum(),
-            ],
-          ),
-        ),
+        body: LandingPageForum(),
         // #enddocregion add-widget
       ),
     );

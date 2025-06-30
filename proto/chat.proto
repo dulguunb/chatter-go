@@ -103,13 +103,14 @@ message AddUserResponse{
     User user = 1;
 }
 
+
 service ChatService {
     rpc SendPublicKey(PublicKeySendRequest) returns (PublicKeySendResponse);
     rpc GetPublicKeyOfPartner(PublicKeyRequest) returns (PublicKeyResponse);
     rpc AddUser(AddUserRequest) returns (AddUserResponse);
     rpc StreamUsersUpdate(GetAvailableUsersRequest) returns (stream GetAvailableUsersResponse);
     rpc SendMessage(SendMessageRequest) returns (SendMessageResponse);
-    rpc GetConversations(GetConversationsRequest) returns (stream GetConversationsResponse);
+    rpc GetConversations(GetConversationsRequest) returns (GetConversationsResponse);
     rpc GetMessages(GetMessagesRequest) returns (stream GetMessagesResponse);
     rpc CreateConversation(CreateConversationRequest) returns (CreateConversationResponse);
 }

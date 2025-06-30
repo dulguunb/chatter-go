@@ -72,35 +72,37 @@ func (c *ChatService) CreateConversation(receiver *chatterPb.User) (*chatterPb.C
 }
 
 func (c *ChatService) GetConversations() (chan *chatterPb.Conversation, grpc.ServerStreamingClient[chatterPb.GetConversationsResponse], error) {
-	client := chatterPb.NewChatServiceClient(c.conn)
-	ctx := context.Background()
-	r, err := client.GetConversations(ctx,
-		&chatterPb.GetConversationsRequest{
-			UserId: c.Sender.Id,
-		})
-	if err != nil {
-		return nil, nil, err
-	}
-	conversationChan := make(chan *chatterPb.Conversation, 0)
-	go func() {
-		for {
-			stream, err := r.Recv()
-			if err != nil {
-				logging.Logger.Sugar().Error(err)
-			}
-			logging.Logger.Sugar().Info(stream.Conversations)
-			// right now only one conversation per person is supported
-			if len(stream.Conversations) == 1 {
-				c.Conversation = stream.Conversations[0]
-				conversationChan <- stream.Conversations[0]
-				if err != nil {
-					logging.Logger.Sugar().Error(err)
-				}
-				break
-			}
-		}
-	}()
-	return conversationChan, r, nil
+	// TODO: Fix? or delete
+	// client := chatterPb.NewChatServiceClient(c.conn)
+	// ctx := context.Background()
+	// r, err := client.GetConversations(ctx,
+	// 	&chatterPb.GetConversationsRequest{
+	// 		UserId: c.Sender.Id,
+	// 	})
+	// if err != nil {
+	// 	return nil, nil, err
+	// }
+	// conversationChan := make(chan *chatterPb.Conversation, 0)
+	// go func() {
+	// 	for {
+	// 		stream, err := r.Recv()
+	// 		if err != nil {
+	// 			logging.Logger.Sugar().Error(err)
+	// 		}
+	// 		logging.Logger.Sugar().Info(stream.Conversations)
+	// 		// right now only one conversation per person is supported
+	// 		if len(stream.Conversations) == 1 {
+	// 			c.Conversation = stream.Conversations[0]
+	// 			conversationChan <- stream.Conversations[0]
+	// 			if err != nil {
+	// 				logging.Logger.Sugar().Error(err)
+	// 			}
+	// 			break
+	// 		}
+	// 	}
+	// }()
+	// return conversationChan, r, nil
+	return nil, nil, nil
 }
 
 func (c *ChatService) SendMessage(senderId string, message string) error {

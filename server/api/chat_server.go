@@ -71,39 +71,13 @@ func (s *ChatServer) SendMessage(ctx context.Context, req *pb.SendMessageRequest
 	return &pb.SendMessageResponse{Message: msg}, nil
 }
 
-func (s *ChatServer) GetConversations(req *pb.GetConversationsRequest, stream grpc.ServerStreamingServer[pb.GetConversationsResponse]) error {
-	ctx, cancel := context.WithCancel(stream.Context())
-	defer cancel()
-	conversationChannel := make(chan *pb.Conversation)
-	topic := "created_convo_" + req.UserId
-	messages, err := s.publisher.Subscribe(ctx, topic)
-	if err != nil {
-		log.Fatal(err)
-	}
+func (s *ChatServer) GetConversations(ctx context.Context, req *pb.GetConversationsRequest) (*pb.GetConversationsResponse, error) {
 
-	go func() {
-		logging.Logger.Sugar().Infof("Subscriber started, listening on topic %q", topic)
-		for msg := range messages {
-			receivedConv := &pb.Conversation{}
-			err = proto.Unmarshal(msg.Payload, receivedConv)
-			conversationChannel <- receivedConv
-		}
-	}()
-
-	for {
-		select {
-		case conversation := <-conversationChannel:
-			resp := pb.GetConversationsResponse{
-				Conversations: []*pb.Conversation{conversation},
-			}
-			if err := stream.Send(&resp); err != nil {
-				return err
-			}
-		case <-ctx.Done():
-			logging.Logger.Sugar().Infof("gRPC stream context cancelled for getConversation() %s", ctx.Err())
-			return ctx.Err()
-		}
+	conversations, _ := s.dataStore.GetConversationsFromUserId(req.UserId)
+	resp := pb.GetConversationsResponse{
+		Conversations: conversations,
 	}
+	return &resp, nil
 }
 
 func (s *ChatServer) GetMessages(req *pb.GetMessagesRequest, stream grpc.ServerStreamingServer[pb.GetMessagesResponse]) error {
@@ -159,7 +133,6 @@ func (s *ChatServer) GetMessages(req *pb.GetMessagesRequest, stream grpc.ServerS
 			logging.Logger.Sugar().Infof("gRPC stream context cancelled for convo %s: %v", convoID, ctx.Err())
 			return ctx.Err()
 		}
-
 		time.Sleep(1000 * time.Millisecond)
 	}
 }
@@ -181,9 +154,9 @@ func (s *ChatServer) CreateConversation(ctx context.Context, req *pb.CreateConve
 		watermillMsg := message.NewMessage(uuid.NewString(), payload)
 		topic := "created_convo_" + participantId
 		if err := s.publisher.Publish(topic, watermillMsg); err != nil {
-			logging.Logger.Sugar().Info("Error publishing conversation update to Watermill topic %s: %v", topic, err)
+			logging.Logger.Sugar().Errorf("Error publishing conversation update to Watermill topic %s: %v", topic, err)
 		} else {
-			logging.Logger.Sugar().Info("Published update for conversation %s to topic %s", conv.Id, topic)
+			logging.Logger.Sugar().Info("Published update for conversation topic %s", topic)
 		}
 	}
 

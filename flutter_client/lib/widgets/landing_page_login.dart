@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:meow/widgets/choose_users_widget.dart';
+import 'package:meow/grpc/conn.dart';
+import 'package:meow/grpc/service_locator.dart';
+import 'package:get_it/get_it.dart';
 
 class ImageSection extends StatelessWidget {
   const ImageSection({super.key, required this.image});
@@ -51,9 +54,19 @@ class _LandingPageForumState extends State<LandingPageForum> {
             padding: const EdgeInsets.symmetric(horizontal: 8,vertical: 16),
             child: FloatingActionButton(
               onPressed: () {
-                String combinedText = ipAddressController.text + usernameController.text;
+                try{
+                  final chatService = GetIt.I<ChatService>();
+                } catch (e){
+                  String ipAddress = ipAddressController.text;
+                  ChatService chatService = ChatService(ipAddress: ipAddress,port: 50051);
+                  chatService.addUser(usernameController.text);
+                  getIt.registerSingleton<ChatService>(
+                    chatService
+                  );
+                }
                 Navigator.push(context,
-                MaterialPageRoute(builder: (context) => const UserListings()));
+                    MaterialPageRoute(builder: (context) => const UserListings()
+                ));
               },
               child: const Icon(Icons.save)
             ),
