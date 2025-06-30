@@ -69,6 +69,6 @@ jobs:
             server/build/server
             client/build/client
             client/build/client.exe
-            flutter_client/build/linux/x64/release/bundle/meow
+            flutter_client/build/linux/x64/release/bundle
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
