@@ -54,10 +54,12 @@ jobs:
 #          PROGRAM_NAME=client make linux_static -f build.mk
 #          PROGRAM_NAME=client make windows -f build.mk
 
-      - name: List build outputs
+      - name: List and tar build outputs
         run: |
           ls -lh server/build/
           ls -lh flutter_client/build/linux/x64/release/bundle/meow
+          tar -czvf meow.tar.gz flutter_client/build/linux/x64/release/bundle/
+          ls -lh
 
       - name: Create GitHub Release (only on tags)
         if: startsWith(github.ref, 'refs/tags/v')
@@ -69,6 +71,6 @@ jobs:
             server/build/server
             client/build/client
             client/build/client.exe
-            flutter_client/build/linux/x64/release/bundle
+            meow.tar.gz
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
