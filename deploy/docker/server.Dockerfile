@@ -1,8 +1,7 @@
 FROM alpine:3.21.3
 
-ARG SERVER_BUILD_PATH=""
 WORKDIR /app
-COPY ${SERVER_BUILD_PATH} /app/
+COPY server /app/
 
 EXPOSE 50051
 ENTRYPOINT [ "/app/server" ]

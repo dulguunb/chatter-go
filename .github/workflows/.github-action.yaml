@@ -10,13 +10,25 @@ on:
     branches:
       - '**' 
 permissions:
-  contents: write
+  packages: write
+  contents: read
 
 jobs:
   test-build-release:
     runs-on: ubuntu-latest
+    env:
+      IMAGE_NAME: ghcr.io/${{ github.repository_owner }}/chatter
+      IMAGE_TAG: ${{ github.sha }}
+      SERVER_BUILD_PATH: server/build/server
 
     steps:
+      - name: Log in to the Container registry
+        uses: docker/login-action@65b78e6e13532edd9afa3aa52ac7964289d1a9c1
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Checkout repository
         uses: actions/checkout@v4
 
@@ -47,12 +59,17 @@ jobs:
       - name: Build server binary
         run: |
           PROGRAM_NAME=server make linux_static -f build.mk
+          cp server/build/server deploy/docker/
 
-    
-#      - name: Build client binary
-#        run: |
-#          PROGRAM_NAME=client make linux_static -f build.mk
-#          PROGRAM_NAME=client make windows -f build.mk
+      - name: Build and push Docker image
+        uses: docker/build-push-action@f2a1d5e99d037542a71f64918e516c093c6f3fc4
+        with:
+          build-args: |
+            SERVER_BUILD_PATH=${{ env.SERVER_BUILD_PATH }}
+          context: deploy/docker/
+          file: deploy/docker/server.Dockerfile
+          tags: ghcr.io/${{ github.repository_owner }}/chatter:${{ github.sha }}
+          push: true
 
       - name: List and tar build outputs
         run: |
