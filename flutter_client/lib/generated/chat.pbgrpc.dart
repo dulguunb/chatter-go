@@ -56,8 +56,12 @@ class ChatServiceClient extends $grpc.Client {
     return $createUnaryCall(_$getConversations, request, options: options);
   }
 
-  $grpc.ResponseStream<$0.GetMessagesResponse> getMessages($0.GetMessagesRequest request, {$grpc.CallOptions? options,}) {
-    return $createStreamingCall(_$getMessages, $async.Stream.fromIterable([request]), options: options);
+  $grpc.ResponseStream<$0.GetMessagesResponse> getMessagesStream($0.GetMessagesRequest request, {$grpc.CallOptions? options,}) {
+    return $createStreamingCall(_$getMessagesStream, $async.Stream.fromIterable([request]), options: options);
+  }
+
+  $grpc.ResponseFuture<$0.GetMessagesResponse> getMessages($0.GetMessagesRequest request, {$grpc.CallOptions? options,}) {
+    return $createUnaryCall(_$getMessages, request, options: options);
   }
 
   $grpc.ResponseFuture<$0.CreateConversationResponse> createConversation($0.CreateConversationRequest request, {$grpc.CallOptions? options,}) {
@@ -90,6 +94,10 @@ class ChatServiceClient extends $grpc.Client {
       '/chatter_message.ChatService/GetConversations',
       ($0.GetConversationsRequest value) => value.writeToBuffer(),
       $0.GetConversationsResponse.fromBuffer);
+  static final _$getMessagesStream = $grpc.ClientMethod<$0.GetMessagesRequest, $0.GetMessagesResponse>(
+      '/chatter_message.ChatService/GetMessagesStream',
+      ($0.GetMessagesRequest value) => value.writeToBuffer(),
+      $0.GetMessagesResponse.fromBuffer);
   static final _$getMessages = $grpc.ClientMethod<$0.GetMessagesRequest, $0.GetMessagesResponse>(
       '/chatter_message.ChatService/GetMessages',
       ($0.GetMessagesRequest value) => value.writeToBuffer(),
@@ -148,10 +156,17 @@ abstract class ChatServiceBase extends $grpc.Service {
         ($core.List<$core.int> value) => $0.GetConversationsRequest.fromBuffer(value),
         ($0.GetConversationsResponse value) => value.writeToBuffer()));
     $addMethod($grpc.ServiceMethod<$0.GetMessagesRequest, $0.GetMessagesResponse>(
+        'GetMessagesStream',
+        getMessagesStream_Pre,
+        false,
+        true,
+        ($core.List<$core.int> value) => $0.GetMessagesRequest.fromBuffer(value),
+        ($0.GetMessagesResponse value) => value.writeToBuffer()));
+    $addMethod($grpc.ServiceMethod<$0.GetMessagesRequest, $0.GetMessagesResponse>(
         'GetMessages',
         getMessages_Pre,
         false,
-        true,
+        false,
         ($core.List<$core.int> value) => $0.GetMessagesRequest.fromBuffer(value),
         ($0.GetMessagesResponse value) => value.writeToBuffer()));
     $addMethod($grpc.ServiceMethod<$0.CreateConversationRequest, $0.CreateConversationResponse>(
@@ -199,11 +214,17 @@ abstract class ChatServiceBase extends $grpc.Service {
 
   $async.Future<$0.GetConversationsResponse> getConversations($grpc.ServiceCall call, $0.GetConversationsRequest request);
 
-  $async.Stream<$0.GetMessagesResponse> getMessages_Pre($grpc.ServiceCall $call, $async.Future<$0.GetMessagesRequest> $request) async* {
-    yield* getMessages($call, await $request);
+  $async.Stream<$0.GetMessagesResponse> getMessagesStream_Pre($grpc.ServiceCall $call, $async.Future<$0.GetMessagesRequest> $request) async* {
+    yield* getMessagesStream($call, await $request);
   }
 
-  $async.Stream<$0.GetMessagesResponse> getMessages($grpc.ServiceCall call, $0.GetMessagesRequest request);
+  $async.Stream<$0.GetMessagesResponse> getMessagesStream($grpc.ServiceCall call, $0.GetMessagesRequest request);
+
+  $async.Future<$0.GetMessagesResponse> getMessages_Pre($grpc.ServiceCall $call, $async.Future<$0.GetMessagesRequest> $request) async {
+    return getMessages($call, await $request);
+  }
+
+  $async.Future<$0.GetMessagesResponse> getMessages($grpc.ServiceCall call, $0.GetMessagesRequest request);
 
   $async.Future<$0.CreateConversationResponse> createConversation_Pre($grpc.ServiceCall $call, $async.Future<$0.CreateConversationRequest> $request) async {
     return createConversation($call, await $request);

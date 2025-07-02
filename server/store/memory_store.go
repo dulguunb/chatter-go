@@ -90,7 +90,7 @@ func (m *MemoryStoreHandler) GetMessages(convId string) ([]*pb.Message, error) {
 	if m, ok := m.messages[convId]; ok {
 		return m, nil
 	}
-	return nil, fmt.Errorf("conv:%s does not have message", convId)
+	return []*pb.Message{}, nil
 }
 
 func (m *MemoryStoreHandler) GetLastMessage(convoId string) (*pb.Message, error) {

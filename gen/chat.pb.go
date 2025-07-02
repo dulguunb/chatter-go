@@ -1150,15 +1150,16 @@ const file_chat_proto_rawDesc = "" +
 	"\x0eAddUserRequest\x12)\n" +
 	"\x04user\x18\x01 \x01(\v2\x15.chatter_message.UserR\x04user\"<\n" +
 	"\x0fAddUserResponse\x12)\n" +
-	"\x04user\x18\x01 \x01(\v2\x15.chatter_message.UserR\x04user2\x97\x06\n" +
+	"\x04user\x18\x01 \x01(\v2\x15.chatter_message.UserR\x04user2\xf7\x06\n" +
 	"\vChatService\x12^\n" +
 	"\rSendPublicKey\x12%.chatter_message.PublicKeySendRequest\x1a&.chatter_message.PublicKeySendResponse\x12^\n" +
 	"\x15GetPublicKeyOfPartner\x12!.chatter_message.PublicKeyRequest\x1a\".chatter_message.PublicKeyResponse\x12L\n" +
 	"\aAddUser\x12\x1f.chatter_message.AddUserRequest\x1a .chatter_message.AddUserResponse\x12l\n" +
 	"\x11StreamUsersUpdate\x12).chatter_message.GetAvailableUsersRequest\x1a*.chatter_message.GetAvailableUsersResponse0\x01\x12X\n" +
 	"\vSendMessage\x12#.chatter_message.SendMessageRequest\x1a$.chatter_message.SendMessageResponse\x12g\n" +
-	"\x10GetConversations\x12(.chatter_message.GetConversationsRequest\x1a).chatter_message.GetConversationsResponse\x12Z\n" +
-	"\vGetMessages\x12#.chatter_message.GetMessagesRequest\x1a$.chatter_message.GetMessagesResponse0\x01\x12m\n" +
+	"\x10GetConversations\x12(.chatter_message.GetConversationsRequest\x1a).chatter_message.GetConversationsResponse\x12`\n" +
+	"\x11GetMessagesStream\x12#.chatter_message.GetMessagesRequest\x1a$.chatter_message.GetMessagesResponse0\x01\x12X\n" +
+	"\vGetMessages\x12#.chatter_message.GetMessagesRequest\x1a$.chatter_message.GetMessagesResponse\x12m\n" +
 	"\x12CreateConversation\x12*.chatter_message.CreateConversationRequest\x1a+.chatter_message.CreateConversationResponseB Z\x1egithub.com/dulguunb/chatter-gob\x06proto3"
 
 var (
@@ -1211,18 +1212,20 @@ var file_chat_proto_depIdxs = []int32{
 	16, // 11: chatter_message.ChatService.StreamUsersUpdate:input_type -> chatter_message.GetAvailableUsersRequest
 	8,  // 12: chatter_message.ChatService.SendMessage:input_type -> chatter_message.SendMessageRequest
 	10, // 13: chatter_message.ChatService.GetConversations:input_type -> chatter_message.GetConversationsRequest
-	12, // 14: chatter_message.ChatService.GetMessages:input_type -> chatter_message.GetMessagesRequest
-	14, // 15: chatter_message.ChatService.CreateConversation:input_type -> chatter_message.CreateConversationRequest
-	5,  // 16: chatter_message.ChatService.SendPublicKey:output_type -> chatter_message.PublicKeySendResponse
-	7,  // 17: chatter_message.ChatService.GetPublicKeyOfPartner:output_type -> chatter_message.PublicKeyResponse
-	19, // 18: chatter_message.ChatService.AddUser:output_type -> chatter_message.AddUserResponse
-	17, // 19: chatter_message.ChatService.StreamUsersUpdate:output_type -> chatter_message.GetAvailableUsersResponse
-	9,  // 20: chatter_message.ChatService.SendMessage:output_type -> chatter_message.SendMessageResponse
-	11, // 21: chatter_message.ChatService.GetConversations:output_type -> chatter_message.GetConversationsResponse
-	13, // 22: chatter_message.ChatService.GetMessages:output_type -> chatter_message.GetMessagesResponse
-	15, // 23: chatter_message.ChatService.CreateConversation:output_type -> chatter_message.CreateConversationResponse
-	16, // [16:24] is the sub-list for method output_type
-	8,  // [8:16] is the sub-list for method input_type
+	12, // 14: chatter_message.ChatService.GetMessagesStream:input_type -> chatter_message.GetMessagesRequest
+	12, // 15: chatter_message.ChatService.GetMessages:input_type -> chatter_message.GetMessagesRequest
+	14, // 16: chatter_message.ChatService.CreateConversation:input_type -> chatter_message.CreateConversationRequest
+	5,  // 17: chatter_message.ChatService.SendPublicKey:output_type -> chatter_message.PublicKeySendResponse
+	7,  // 18: chatter_message.ChatService.GetPublicKeyOfPartner:output_type -> chatter_message.PublicKeyResponse
+	19, // 19: chatter_message.ChatService.AddUser:output_type -> chatter_message.AddUserResponse
+	17, // 20: chatter_message.ChatService.StreamUsersUpdate:output_type -> chatter_message.GetAvailableUsersResponse
+	9,  // 21: chatter_message.ChatService.SendMessage:output_type -> chatter_message.SendMessageResponse
+	11, // 22: chatter_message.ChatService.GetConversations:output_type -> chatter_message.GetConversationsResponse
+	13, // 23: chatter_message.ChatService.GetMessagesStream:output_type -> chatter_message.GetMessagesResponse
+	13, // 24: chatter_message.ChatService.GetMessages:output_type -> chatter_message.GetMessagesResponse
+	15, // 25: chatter_message.ChatService.CreateConversation:output_type -> chatter_message.CreateConversationResponse
+	17, // [17:26] is the sub-list for method output_type
+	8,  // [8:17] is the sub-list for method input_type
 	8,  // [8:8] is the sub-list for extension type_name
 	8,  // [8:8] is the sub-list for extension extendee
 	0,  // [0:8] is the sub-list for field type_name

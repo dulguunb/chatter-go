@@ -36,14 +36,16 @@ class ChatBubble extends StatelessWidget {
 
 class ChatScreen extends StatefulWidget {
   final Conversation conv;
-  const ChatScreen({super.key,required this.conv});
+  final List<Message> allMessages;
+  const ChatScreen({super.key,required this.conv,required this.allMessages});
   @override
-  _ChatScreenState createState() => _ChatScreenState(conv: conv);
+  _ChatScreenState createState() => _ChatScreenState(conv: conv,allMessages: allMessages);
 }
 
 class _ChatScreenState extends State<ChatScreen> {
   final Conversation conv;
-  _ChatScreenState({required this.conv});
+  List<Message> allMessages = [];
+  _ChatScreenState({required this.conv,required this.allMessages});
   List<Message> messages = [];
 
   final TextEditingController controller = TextEditingController();
@@ -55,8 +57,6 @@ class _ChatScreenState extends State<ChatScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final chatService = GetIt.I<ChatService>();
-    final receiveMessageStream = chatService.getMessageStream(conv.id);
     return Scaffold(
       appBar: AppBar(title: Text("Chat")),
       body: Column(
@@ -64,22 +64,12 @@ class _ChatScreenState extends State<ChatScreen> {
           // StreamBuilder here
           Expanded(
             child: StreamBuilder<GetMessagesResponse>(
-              stream: receiveMessageStream,
+              stream: GetIt.I<ChatService>().getMessagesStream(conv.id),
               builder: (context, snapshot) {
-                if (!snapshot.hasData) {
-                    return ChatBubble(
-                      message: "",
-                      isMe: false,
-                    );
+                if (snapshot.hasData) {
+                  allMessages = snapshot.data!.messages.reversed.toList();
                 }
-
-                final newMessages = snapshot.data!.messages
-                    .where((msg) => msg.conversationId.isNotEmpty)
-                    .toList();
-
                 // Reverse the list to match chat order
-                final allMessages = newMessages.reversed.toList();
-
                 return ListView.builder(
                   reverse: true,
                   itemCount: allMessages.length,
@@ -94,8 +84,6 @@ class _ChatScreenState extends State<ChatScreen> {
               },
             ),
           ),
-
-          // Text input section
           Padding(
             padding: EdgeInsets.all(8),
             child: Row(

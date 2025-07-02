@@ -25,6 +25,7 @@ const (
 	ChatService_StreamUsersUpdate_FullMethodName     = "/chatter_message.ChatService/StreamUsersUpdate"
 	ChatService_SendMessage_FullMethodName           = "/chatter_message.ChatService/SendMessage"
 	ChatService_GetConversations_FullMethodName      = "/chatter_message.ChatService/GetConversations"
+	ChatService_GetMessagesStream_FullMethodName     = "/chatter_message.ChatService/GetMessagesStream"
 	ChatService_GetMessages_FullMethodName           = "/chatter_message.ChatService/GetMessages"
 	ChatService_CreateConversation_FullMethodName    = "/chatter_message.ChatService/CreateConversation"
 )
@@ -39,7 +40,8 @@ type ChatServiceClient interface {
 	StreamUsersUpdate(ctx context.Context, in *GetAvailableUsersRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[GetAvailableUsersResponse], error)
 	SendMessage(ctx context.Context, in *SendMessageRequest, opts ...grpc.CallOption) (*SendMessageResponse, error)
 	GetConversations(ctx context.Context, in *GetConversationsRequest, opts ...grpc.CallOption) (*GetConversationsResponse, error)
-	GetMessages(ctx context.Context, in *GetMessagesRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[GetMessagesResponse], error)
+	GetMessagesStream(ctx context.Context, in *GetMessagesRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[GetMessagesResponse], error)
+	GetMessages(ctx context.Context, in *GetMessagesRequest, opts ...grpc.CallOption) (*GetMessagesResponse, error)
 	CreateConversation(ctx context.Context, in *CreateConversationRequest, opts ...grpc.CallOption) (*CreateConversationResponse, error)
 }
 
@@ -120,9 +122,9 @@ func (c *chatServiceClient) GetConversations(ctx context.Context, in *GetConvers
 	return out, nil
 }
 
-func (c *chatServiceClient) GetMessages(ctx context.Context, in *GetMessagesRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[GetMessagesResponse], error) {
+func (c *chatServiceClient) GetMessagesStream(ctx context.Context, in *GetMessagesRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[GetMessagesResponse], error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	stream, err := c.cc.NewStream(ctx, &ChatService_ServiceDesc.Streams[1], ChatService_GetMessages_FullMethodName, cOpts...)
+	stream, err := c.cc.NewStream(ctx, &ChatService_ServiceDesc.Streams[1], ChatService_GetMessagesStream_FullMethodName, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -137,7 +139,17 @@ func (c *chatServiceClient) GetMessages(ctx context.Context, in *GetMessagesRequ
 }
 
 // This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
-type ChatService_GetMessagesClient = grpc.ServerStreamingClient[GetMessagesResponse]
+type ChatService_GetMessagesStreamClient = grpc.ServerStreamingClient[GetMessagesResponse]
+
+func (c *chatServiceClient) GetMessages(ctx context.Context, in *GetMessagesRequest, opts ...grpc.CallOption) (*GetMessagesResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetMessagesResponse)
+	err := c.cc.Invoke(ctx, ChatService_GetMessages_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
 
 func (c *chatServiceClient) CreateConversation(ctx context.Context, in *CreateConversationRequest, opts ...grpc.CallOption) (*CreateConversationResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
@@ -159,7 +171,8 @@ type ChatServiceServer interface {
 	StreamUsersUpdate(*GetAvailableUsersRequest, grpc.ServerStreamingServer[GetAvailableUsersResponse]) error
 	SendMessage(context.Context, *SendMessageRequest) (*SendMessageResponse, error)
 	GetConversations(context.Context, *GetConversationsRequest) (*GetConversationsResponse, error)
-	GetMessages(*GetMessagesRequest, grpc.ServerStreamingServer[GetMessagesResponse]) error
+	GetMessagesStream(*GetMessagesRequest, grpc.ServerStreamingServer[GetMessagesResponse]) error
+	GetMessages(context.Context, *GetMessagesRequest) (*GetMessagesResponse, error)
 	CreateConversation(context.Context, *CreateConversationRequest) (*CreateConversationResponse, error)
 	mustEmbedUnimplementedChatServiceServer()
 }
@@ -189,8 +202,11 @@ func (UnimplementedChatServiceServer) SendMessage(context.Context, *SendMessageR
 func (UnimplementedChatServiceServer) GetConversations(context.Context, *GetConversationsRequest) (*GetConversationsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetConversations not implemented")
 }
-func (UnimplementedChatServiceServer) GetMessages(*GetMessagesRequest, grpc.ServerStreamingServer[GetMessagesResponse]) error {
-	return status.Errorf(codes.Unimplemented, "method GetMessages not implemented")
+func (UnimplementedChatServiceServer) GetMessagesStream(*GetMessagesRequest, grpc.ServerStreamingServer[GetMessagesResponse]) error {
+	return status.Errorf(codes.Unimplemented, "method GetMessagesStream not implemented")
+}
+func (UnimplementedChatServiceServer) GetMessages(context.Context, *GetMessagesRequest) (*GetMessagesResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetMessages not implemented")
 }
 func (UnimplementedChatServiceServer) CreateConversation(context.Context, *CreateConversationRequest) (*CreateConversationResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreateConversation not implemented")
@@ -317,16 +333,34 @@ func _ChatService_GetConversations_Handler(srv interface{}, ctx context.Context,
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ChatService_GetMessages_Handler(srv interface{}, stream grpc.ServerStream) error {
+func _ChatService_GetMessagesStream_Handler(srv interface{}, stream grpc.ServerStream) error {
 	m := new(GetMessagesRequest)
 	if err := stream.RecvMsg(m); err != nil {
 		return err
 	}
-	return srv.(ChatServiceServer).GetMessages(m, &grpc.GenericServerStream[GetMessagesRequest, GetMessagesResponse]{ServerStream: stream})
+	return srv.(ChatServiceServer).GetMessagesStream(m, &grpc.GenericServerStream[GetMessagesRequest, GetMessagesResponse]{ServerStream: stream})
 }
 
 // This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
-type ChatService_GetMessagesServer = grpc.ServerStreamingServer[GetMessagesResponse]
+type ChatService_GetMessagesStreamServer = grpc.ServerStreamingServer[GetMessagesResponse]
+
+func _ChatService_GetMessages_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetMessagesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ChatServiceServer).GetMessages(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ChatService_GetMessages_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ChatServiceServer).GetMessages(ctx, req.(*GetMessagesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
 
 func _ChatService_CreateConversation_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(CreateConversationRequest)
@@ -374,6 +408,10 @@ var ChatService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _ChatService_GetConversations_Handler,
 		},
 		{
+			MethodName: "GetMessages",
+			Handler:    _ChatService_GetMessages_Handler,
+		},
+		{
 			MethodName: "CreateConversation",
 			Handler:    _ChatService_CreateConversation_Handler,
 		},
@@ -385,8 +423,8 @@ var ChatService_ServiceDesc = grpc.ServiceDesc{
 			ServerStreams: true,
 		},
 		{
-			StreamName:    "GetMessages",
-			Handler:       _ChatService_GetMessages_Handler,
+			StreamName:    "GetMessagesStream",
+			Handler:       _ChatService_GetMessagesStream_Handler,
 			ServerStreams: true,
 		},
 	},

@@ -7,7 +7,7 @@ class ChatService {
   late ChatServiceClient serviceClient;
   late User me;
   late List<Conversation> conversations = <Conversation>[];
-  
+  late Map<String,ResponseStream<GetMessagesResponse>> messageStreams = {};
   ChatService({required String ipAddress,required int port}){
     final channel = ClientChannel(
       ipAddress,
@@ -27,12 +27,8 @@ class ChatService {
       available: true,
     );
     AddUserRequest req = AddUserRequest(user: me );
-    try {
-      final res = await serviceClient.addUser(req);
-      return res;
-    } catch(e) {
-      throw 'could not add user: $username';
-    }
+    final res = await serviceClient.addUser(req);
+    return res;
   }
 
   ResponseStream<GetAvailableUsersResponse> getUsersStream() {
@@ -59,15 +55,22 @@ class ChatService {
   sendMessage(String content,String convId) async {
     SendMessageRequest req = SendMessageRequest(conversationId: convId,content: content,senderId: me.id, username:me.username);
     final resp = await serviceClient.sendMessage(req);
-    // TODO:  Error handle 
   }
 
-  ResponseStream<GetMessagesResponse> getMessageStream(String conversationId) {
-    GetMessagesRequest req = GetMessagesRequest(
-      conversationId:conversationId,
-    );
-    final messageStream = serviceClient.getMessages(req);
-    return messageStream;
+  ResponseStream<GetMessagesResponse> getMessagesStream(String conversationId) {
+     GetMessagesRequest req = GetMessagesRequest(
+        conversationId:conversationId,
+      );
+      final messageStream = serviceClient.getMessagesStream(req);
+      return messageStream;
+  }
+
+  Future<GetMessagesResponse> getMessages(String conversationId) {
+     GetMessagesRequest req = GetMessagesRequest(
+        conversationId:conversationId,
+      );
+      final getMessagesResponse = serviceClient.getMessages(req);
+      return getMessagesResponse;
   }
 
   bool isMe(String userId){

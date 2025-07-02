@@ -59,7 +59,9 @@ class _ChooseUserCard extends StatelessWidget {
             children: <Widget>[ElevatedButton(child: const Text('chat'), 
             onPressed: () async {
                 final conv = await chatService.createConversation(user);
-                Navigator.push(context, MaterialPageRoute(builder: (context) => ChatScreen(conv: conv)
+                final messageStream = await GetIt.I<ChatService>().getMessages(conv.id);
+                final allMessages = messageStream!.messages;
+                Navigator.push(context, MaterialPageRoute(builder: (context) => ChatScreen(conv: conv,allMessages: allMessages)
                 ));
             },),
           ]

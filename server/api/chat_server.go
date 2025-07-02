@@ -79,8 +79,16 @@ func (s *ChatServer) GetConversations(ctx context.Context, req *pb.GetConversati
 	}
 	return &resp, nil
 }
+func (s *ChatServer) GetMessages(ctx context.Context, req *pb.GetMessagesRequest) (*pb.GetMessagesResponse, error) {
+	message, err := s.dataStore.GetMessages(req.ConversationId)
+	if err != nil {
 
-func (s *ChatServer) GetMessages(req *pb.GetMessagesRequest, stream grpc.ServerStreamingServer[pb.GetMessagesResponse]) error {
+	}
+	messageResponse := pb.GetMessagesResponse{Messages: message}
+	return &messageResponse, err
+}
+
+func (s *ChatServer) GetMessagesStream(req *pb.GetMessagesRequest, stream grpc.ServerStreamingServer[pb.GetMessagesResponse]) error {
 	convoID := req.ConversationId
 	ctx, cancel := context.WithCancel(stream.Context())
 	defer cancel()
