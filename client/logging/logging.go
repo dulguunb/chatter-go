@@ -12,6 +12,22 @@ import (
 var Logger *zap.Logger
 
 func init() {
+	encoderConfig := zap.NewProductionEncoderConfig()
+	encoderConfig.TimeKey = "ts"
+	encoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder
+
+	encoder := zapcore.NewConsoleEncoder(encoderConfig) // for human-friendly logs
+
+	ws := zapcore.Lock(os.Stdout)
+
+	level := zapcore.InfoLevel
+
+	core := zapcore.NewCore(encoder, ws, level)
+
+	Logger = zap.New(core)
+}
+
+func file_logger_init() {
 	logUuid := uuid.NewString()
 	// Open the log file
 	file, err := os.OpenFile(fmt.Sprintf("app-%s.log", logUuid), os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0644)
@@ -41,7 +57,5 @@ func init() {
 		zapcore.NewCore(fileEncoder, fileWriter, zapcore.DebugLevel),
 		// zapcore.NewCore(consoleEncoder, consoleWriter, logLevel),
 	)
-
-	// Create the logger
 	Logger = zap.New(core, zap.AddCaller())
 }
