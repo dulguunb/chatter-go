@@ -44,8 +44,9 @@ class _UserListingsState extends State<UserListings> {
 }
 
 class _ChooseUserCard extends StatelessWidget {
-  const _ChooseUserCard({required this.user});
+  _ChooseUserCard({required this.user});
   final User user;
+  late Map<String,List<Message>> conversations = {};
   @override
   Widget build(BuildContext context) {
     return 
@@ -61,7 +62,8 @@ class _ChooseUserCard extends StatelessWidget {
                 final conv = await chatService.createConversation(user);
                 final messageStream = await GetIt.I<ChatService>().getMessages(conv.id);
                 final allMessages = messageStream!.messages;
-                Navigator.push(context, MaterialPageRoute(builder: (context) => ChatScreen(conv: conv,allMessages: allMessages)
+                conversations[conv.id] = allMessages;
+                Navigator.push(context, MaterialPageRoute(builder: (context) => ChatScreen(conv: conv,allMessages: allMessages.reversed.toList())
                 ));
             },),
           ]

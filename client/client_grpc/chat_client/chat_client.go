@@ -164,7 +164,7 @@ func (c *ChatService) ReceiveMessage(senderId string) (chan []string, error) {
 				Offset:         0,
 			}
 
-			stream, err := client.GetMessages(ctx, &getMessageRequest)
+			stream, err := client.GetMessagesStream(ctx, &getMessageRequest)
 			if err != nil {
 				logging.Logger.Sugar().Error(err)
 			}

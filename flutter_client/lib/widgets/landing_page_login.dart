@@ -53,7 +53,7 @@ class _LandingPageForumState extends State<LandingPageForum> {
         Padding(
             padding: const EdgeInsets.symmetric(horizontal: 8,vertical: 16),
             child: FloatingActionButton(
-              onPressed: () {
+              onPressed: () async {
                 try{
                   final chatService = GetIt.I<ChatService>();
                 } catch (e){
@@ -63,6 +63,7 @@ class _LandingPageForumState extends State<LandingPageForum> {
                   getIt.registerSingleton<ChatService>(
                     chatService
                   );
+                  await chatService.sendPublicKey();
                 }
                 Navigator.push(context,
                     MaterialPageRoute(builder: (context) => const UserListings()

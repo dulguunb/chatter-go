@@ -68,6 +68,9 @@ class _ChatScreenState extends State<ChatScreen> {
               builder: (context, snapshot) {
                 if (snapshot.hasData) {
                   allMessages = snapshot.data!.messages.reversed.toList();
+                  for(var i=0;i<allMessages.length;i++){
+                    allMessages[i].content = GetIt.I<ChatService>().decrypt(allMessages[i].content);
+                  }
                 }
                 // Reverse the list to match chat order
                 return ListView.builder(
