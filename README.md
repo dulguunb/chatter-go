@@ -1,15 +1,19 @@
 # Meow Meow Chat
 
-This is a chat application written in GoLang and Grpc
+This is a chat application written in GoLang, Grpc and Flutter. The chat contents are E2E encrypted, therefore one can't simply decrypt the messages. The build currently only supports Linux, but in future I will compile this in windows, android and IOS.
 
 
-The current view of the application:
+# The current landing page of the application
 
-![Alt Text](https://media3.giphy.com/media/v1.Y2lkPTc5MGI3NjExdTh1aWxvaW02bWIxMmYybW82NjJuYzI1NDM1aWltemdxZmc5M2ZrZCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/9FPAjTXlSgf7bhguKI/giphy.gif)
+![Alt Text](images/landing_page.png)
 
-> [!NOTE]
-> Development is still on-going!!!
-> This page will be updated
+# The current chat room page of the application
+
+This allows you to select users that are in the server.
+![Alt Text](images/user_select.png)
+
+# The current chatting page of the application
+![Alt Text](images/chatting_page.png)
 
 
 ![Alt Text](https://media.giphy.com/media/vFKqnCdLPNOKc/giphy.gif)
