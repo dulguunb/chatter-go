@@ -86,8 +86,6 @@ jobs:
           tag_name: ${{ github.ref_name }}
           files: |
             server/build/server
-            client/build/client
-            client/build/client.exe
             meow.tar.gz
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
