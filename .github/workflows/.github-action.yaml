@@ -45,7 +45,7 @@ jobs:
 
       - name: Run unit tests
         run: |
-          cd client
+          cd flutter_client
           make test
         env:
           CGO_ENABLED: 0
