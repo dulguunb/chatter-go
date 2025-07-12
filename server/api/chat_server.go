@@ -152,7 +152,11 @@ func (s *ChatServer) CreateConversation(ctx context.Context, req *pb.CreateConve
 		Name:           req.Name,
 		LastMessageId:  "",
 	}
-	err := s.dataStore.SetConversation(conv.Id, conv)
+	err := s.dataStore.SetConversation(conv)
+	if err != nil {
+		logging.Logger.Sugar().Error(err)
+		return nil, err
+	}
 	// Publish a topic per conversation participants
 	for _, participantId := range req.ParticipantIds {
 		payload, err := proto.Marshal(conv)
@@ -167,8 +171,9 @@ func (s *ChatServer) CreateConversation(ctx context.Context, req *pb.CreateConve
 			logging.Logger.Sugar().Info("Published update for conversation topic %s", topic)
 		}
 	}
+	createdConv, err := s.dataStore.GetConversation(conv.Id)
 
-	return &pb.CreateConversationResponse{Conversation: conv}, err
+	return &pb.CreateConversationResponse{Conversation: createdConv}, err
 }
 
 func (s *ChatServer) StreamUsersUpdate(req *pb.GetAvailableUsersRequest, stream grpc.ServerStreamingServer[pb.GetAvailableUsersResponse]) error {

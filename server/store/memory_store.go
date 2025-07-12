@@ -54,17 +54,17 @@ func (m *MemoryStoreHandler) GetPublicKey(userid string) (string, error) {
 	return "", fmt.Errorf("user: %s does not have public key exist", userid)
 }
 
-func (m *MemoryStoreHandler) AddUser(in *pb.User) error {
+func (m *MemoryStoreHandler) AddUser(in *pb.User) (*pb.User, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	m.users = append(m.users, in)
 	// TODO: check the memory limit
-	return nil
+	return in, nil
 }
-func (m *MemoryStoreHandler) SetConversation(convId string, conversation *pb.Conversation) error {
+func (m *MemoryStoreHandler) SetConversation(conversation *pb.Conversation) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
-	m.conversations[convId] = conversation
+	m.conversations[conversation.Id] = conversation
 	// TODO: check the memory limit
 	return nil
 }

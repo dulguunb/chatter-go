@@ -59,7 +59,7 @@ class _LandingPageForumState extends State<LandingPageForum> {
                 } catch (e){
                   String ipAddress = ipAddressController.text;
                   ChatService chatService = ChatService(ipAddress: ipAddress,port: 50051);
-                  chatService.addUser(usernameController.text);
+                  await chatService.addUser(usernameController.text);
                   getIt.registerSingleton<ChatService>(
                     chatService
                   );

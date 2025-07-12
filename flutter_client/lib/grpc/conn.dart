@@ -23,16 +23,19 @@ class ChatService {
   }
 
   Future<AddUserResponse> addUser(String username) async {
-    final uuid = Uuid();
-    me = User(
-      id: uuid.v4(),
+    var user = User(
       username: username,
       displayName: username,
       avatarUrl: "",
       available: true,
     );
-    AddUserRequest req = AddUserRequest(user: me );
+    AddUserRequest req = AddUserRequest(user: user );
     final res = await serviceClient.addUser(req);
+    if (res.user.id != ""){
+      me = res.user;
+    } else {
+      throw ("add user did not return id");
+    }
     return res;
   }
 

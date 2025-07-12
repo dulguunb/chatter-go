@@ -5,8 +5,8 @@ import (
 )
 
 type DataStoreHandler interface {
-	AddUser(in *pb.User) error
-	SetConversation(userId string, conversation *pb.Conversation) error
+	AddUser(in *pb.User) (*pb.User, error)
+	SetConversation(conversation *pb.Conversation) error
 	GetConversation(userId string) (*pb.Conversation, error)
 	GetMessages(convId string) ([]*pb.Message, error)
 	GetLastMessage(convId string) (*pb.Message, error)
