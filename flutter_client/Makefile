@@ -5,4 +5,4 @@ windows:
 test:
 	flutter test
 
-.PHONY: linux windows
+.PHONY: linux windows test
