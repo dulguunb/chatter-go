@@ -5,7 +5,9 @@ import (
 	"slices"
 	"sync"
 
+	"github.com/dulguunb/chatter-go/client/logging"
 	pb "github.com/dulguunb/go-chatter/gen"
+	"github.com/google/uuid"
 )
 
 type MemoryStoreHandler struct {
@@ -19,6 +21,7 @@ type MemoryStoreHandler struct {
 var _ DataStoreHandler = (*MemoryStoreHandler)(nil)
 
 func NewMemoryStore() *MemoryStoreHandler {
+	logging.Logger.Sugar().Info("memory mode")
 	return &MemoryStoreHandler{
 		messages:      make(map[string][]*pb.Message),
 		users:         make([]*pb.User, 0),
@@ -57,6 +60,8 @@ func (m *MemoryStoreHandler) GetPublicKey(userid string) (string, error) {
 func (m *MemoryStoreHandler) AddUser(in *pb.User) (*pb.User, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
+	userUuid := uuid.New()
+	in.Id = userUuid.String()
 	m.users = append(m.users, in)
 	// TODO: check the memory limit
 	return in, nil

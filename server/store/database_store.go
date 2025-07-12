@@ -15,6 +15,7 @@ type DatabaseStoreHandler struct {
 var _ DataStoreHandler = (*DatabaseStoreHandler)(nil)
 
 func NewDatabaseStoreHandler(db *sql.DB) *DatabaseStoreHandler {
+	logging.Logger.Sugar().Info("postgres mode")
 	return &DatabaseStoreHandler{
 		db: db,
 	}
@@ -70,13 +71,15 @@ func (m *DatabaseStoreHandler) GetPublicKey(userid string) (string, error) {
 
 func (m *DatabaseStoreHandler) AddUser(in *pb.User) (*pb.User, error) {
 	query := `INSERT INTO users (username, display_name, available,avatar_url) VALUES ($1,$2,$3,$4)`
-	row := m.db.QueryRow(query, in.Username, in.DisplayName, in.Available, in.AvatarUrl)
-	if row.Err() != nil {
-		return nil, row.Err()
+	_, err := m.db.Query(query, in.Username, in.DisplayName, in.Available, in.AvatarUrl)
+	if err != nil {
+		logging.Logger.Sugar().Error(err)
+		return nil, err
 	}
 	query = `SELECT uuid FROM users where username = $1`
-	row = m.db.QueryRow(query, in.Username)
+	row := m.db.QueryRow(query, in.Username)
 	if row.Err() != nil {
+		logging.Logger.Sugar().Error(row.Err())
 		return nil, row.Err()
 	}
 	row.Scan(&in.Id)
