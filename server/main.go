@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"net/http"
+	"time"
 
 	"github.com/dulguunb/chatter-go/server/api"
 	"github.com/dulguunb/chatter-go/server/store"
@@ -27,6 +29,20 @@ func main() {
 	dbname := flag.String("postgres_db", "chatter_db", "database name")
 	var memStore store.DataStoreHandler
 	flag.Parse()
+	go func() {
+		started := time.Now()
+		http.HandleFunc("/started", func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(200)
+			data := (time.Since(started)).String()
+			w.Write([]byte(data))
+		})
+		http.HandleFunc("/healthz", func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(200)
+			w.Write([]byte("ok"))
+		})
+		log.Fatal(http.ListenAndServe(":8080", nil))
+	}()
+
 	if *storageType == "memory" {
 		memStore = store.NewMemoryStore()
 	} else if *storageType == "postgres" {
@@ -50,4 +66,5 @@ func main() {
 	if err := s.Serve(lis); err != nil {
 		log.Fatalf("failed to serve: %v", err)
 	}
+
 }
